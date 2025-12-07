@@ -3,7 +3,6 @@
 #include "storage_engine.h"
 #include <boost/unordered_map.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
-#include <iostream>
 
 class MemoryEngine : public StorageEngine<MemoryEngine> {
     public:
@@ -18,7 +17,7 @@ class MemoryEngine : public StorageEngine<MemoryEngine> {
         }
 
         void put(const std::string &key, const Value value) {
-            map_.insert(std::pair{key, value});
+            map_[key] = value;
         }
     
     private: 

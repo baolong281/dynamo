@@ -1,12 +1,9 @@
-#include "storage/storage_engine.h"
 #include "storage/memory_engine.h"
-#include <iostream>
+#include "server/server.h"
 
 int main() {
     MemoryEngine db{};
+    Server service{db};
 
-    std::vector<std::byte> raw_data = {std::byte{0x01}, std::byte{0x02}, std::byte{0x03}};
-    Value v{ raw_data }; 
-
-    db.put("base", v);
+    service.start("0.0.0.0", 8080);
 }

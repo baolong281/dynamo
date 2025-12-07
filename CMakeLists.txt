@@ -8,12 +8,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(Boost REQUIRED)
 
+find_path(HTTPLIB_INCLUDE_DIR
+    NAMES httplib.h
+    HINTS /opt/homebrew/Cellar/cpp-httplib/0.26.0/
+)
+
+
 add_executable(app
     src/main.cpp
 )
 
 target_include_directories(app
-    PRIVATE include ${Boost_INCLUDE_DIRS}
+    PRIVATE include ${Boost_INCLUDE_DIRS} ${HTTPLIB_INCLUDE_DIR}
+
 )
 
 # target_link_libraries(app PRIVATE
