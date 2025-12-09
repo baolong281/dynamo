@@ -6,6 +6,7 @@
 #include "httplib.h"
 #include <cstddef>
 #include <memory>
+#include <string>
 #include <vector>
 #include <mutex>
 
@@ -19,10 +20,18 @@ class Server {
             });
             svr_.Post("/put", [this](const httplib::Request & req, httplib::Response &res) {
                 this->handlePut(req, res);
+
                 std::string key{req.get_header_value("Key")};
-                auto node = ring_ -> findNode(key);
-                Logger::instance().debug("replicating key: " + key + " to node: " + node -> getId());
-                node -> send_put(key, engine_ -> get(key));
+                Logger::instance().debug("ring size: " + std::to_string(ring_->getNodes().size()));
+                for(auto node : ring_ -> getNodes()) {
+                    Logger::instance().debug("replicating key: " + key + " to node: " + node -> getId());
+                    // Logger::instance().debug("are we here? ");
+                    // mu_.lock();
+                    // auto data = engine_ -> get(key);
+                    // mu_.unlock();
+                    // Logger::instance().debug("we got data: ");
+                    node -> send_put(key, req.body);
+                }
             });
 
             svr_.Post("/replication/put", [this](const httplib::Request & req, httplib::Response &res) {
@@ -58,6 +67,12 @@ class Server {
 
             std::string key{req.get_header_value("Key")};
 
+            if(!(engine_ -> contains(key))) {
+                res.status = 404;
+                res.set_content("Missing key: " + key, "text/plain");
+                return;
+            }
+
             mu_.lock();
             ByteString binary_data = engine_ -> get(key);
             mu_.unlock();
@@ -74,8 +89,7 @@ class Server {
         }
 
         void handlePut(const httplib::Request &req, httplib::Response &res){ 
-            if(req.get_header_value("Content-Type") != "application/octet-stream" || 
-            !req.has_header("Content-Length") || !req.has_header("Key")
+            if(req.get_header_value("Content-Type") != "application/octet-stream" || !req.has_header("Key")
             ) {
                 res.status = 400;
                 res.set_content("Invalid request scheme. Must be binary data and include 'Key' header", "text/plain");

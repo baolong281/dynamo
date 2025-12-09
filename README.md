@@ -4,6 +4,7 @@
 
 TODO: 
 - [x] Basic in memory storage layer and http connections
+    - [] investigate leveldb stalling
 - [ ] Consistent hashing and partitioning across virtual nodes
 - [ ] Persistent storage and crash recovery
 - [ ] Replication

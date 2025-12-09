@@ -1,5 +1,6 @@
 #pragma once
 
+#include "logging/logger.h"
 #include "storage_engine.h"
 #include "leveldb/db.h"
 #include <cassert>
@@ -34,7 +35,9 @@ class DiskEngine : public StorageEngine<DiskEngine> {
 
         ByteString get(const std::string &key) {
             std::string data{};
+            Logger::instance().info("fetching...");
             leveldb::Status s = db_ -> Get(leveldb::ReadOptions(), key, &data);
+            Logger::instance().info("fetched");
             if(!s.ok()) {
                 throw std::runtime_error("Error fetching key");
             }
@@ -47,6 +50,14 @@ class DiskEngine : public StorageEngine<DiskEngine> {
             if(!s.ok()) {
                 throw std::runtime_error("Error writing key");
             }
+        }
+
+        // TODO
+        // this does two reads, make better later
+        bool contains(const std::string &key) {
+            std::string data{};
+            leveldb::Status s = db_ -> Get(leveldb::ReadOptions(), key, &data);
+            return !s.IsNotFound();
         }
     
     private: 

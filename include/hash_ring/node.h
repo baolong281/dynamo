@@ -1,6 +1,7 @@
 #pragma once
 
 #include "httplib.h"
+#include "logging/logger.h"
 #include <memory>
 #include <string>
 

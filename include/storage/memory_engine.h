@@ -16,6 +16,10 @@ class MemoryEngine : public StorageEngine<MemoryEngine> {
             throw std::runtime_error("Key not found");
         }
 
+        bool contains(const std::string &key) {
+            return map_.contains(key);
+        }
+
         void put(const std::string &key, const ByteString value) {
             map_[key] = value;
         }

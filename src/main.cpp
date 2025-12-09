@@ -20,6 +20,7 @@ int main(int argc, char* argv[]) {
     auto db = std::make_shared<DiskEngine>(std::to_string(port));
     auto ring = std::make_shared<HashRing>(1000);
 
+
     Node one{"localhost", 8080};
     Node two{"localhost", 8081};
     Node three{"localhost", 8082};

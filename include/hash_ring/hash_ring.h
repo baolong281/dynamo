@@ -29,6 +29,10 @@ public:
     void addNode(Node node);
     void removeNode(const std::string& node_id);
 
+    std::set<std::shared_ptr<Node>> getNodes() {
+        return nodes_;
+    }
+
 private:
     uint64_t ring_size_;
     std::multiset<VirtualNode, VirtualNodeCmp> node_ring_;

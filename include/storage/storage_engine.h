@@ -14,4 +14,8 @@ class StorageEngine {
         void put(const std::string &key, const ByteString value) {
             static_cast<EngineImpl*>(this) -> put(key, value);
         }
+
+        bool contains(const std::string &key) {
+            return static_cast<EngineImpl*>(this) -> contains(key);
+        }
 };
