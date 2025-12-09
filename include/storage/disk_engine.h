@@ -8,10 +8,10 @@ const std::string DB_PATH{"/tmp/dynamo"};
 
 class DiskEngine : public StorageEngine<DiskEngine> {
     public:
-        DiskEngine() {
+        DiskEngine(std::string id) {
             leveldb::Options options;
             options.create_if_missing = true;
-            leveldb::Status status = leveldb::DB::Open(options,  DB_PATH, &db_);
+            leveldb::Status status = leveldb::DB::Open(options,  DB_PATH + id, &db_);
             assert(status.ok());
         }
 

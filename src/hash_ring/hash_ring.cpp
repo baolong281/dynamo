@@ -48,7 +48,7 @@ void HashRing::addNode(Node node) {
     auto node_ptr = std::make_shared<Node>(node);
 
     for (int i = 0; i < n_vnodes_; i++) {
-        std::string vnode_id = node.id_ + "-" + std::to_string(i);
+        std::string vnode_id = node.getId() + "-" + std::to_string(i);
         uint64_t pos = md5_hash_64(vnode_id);
 
         node_ring_.insert(VirtualNode{vnode_id, pos, node_ptr});
@@ -60,7 +60,7 @@ void HashRing::addNode(Node node) {
 
 void HashRing::removeNode(const std::string& node_id) {
     for (auto it = node_ring_.begin(); it != node_ring_.end();) {
-        if (it->parent_->id_ == node_id) {
+        if (it->parent_->getId() == node_id) {
             it = node_ring_.erase(it);
         } else {
             ++it;
@@ -68,7 +68,7 @@ void HashRing::removeNode(const std::string& node_id) {
     }
 
     for (auto it = nodes_.begin(); it != nodes_.end();) {
-        if ((*it)->id_ == node_id) {
+        if ((*it)->getId() == node_id) {
             it = nodes_.erase(it);
         } else {
             ++it;

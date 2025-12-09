@@ -3,14 +3,13 @@
 #include <string>
 #include <vector>
 #include "hash_ring/hash_ring.h"
-#include <iostream>
 
 TEST(HashRingTest, SingleNodeWorks) {
     HashRing ring{1};
     Node node{"node-1"};
 
     ring.addNode(node);
-    EXPECT_EQ(ring.findNode("hello") -> id_, node.id_);
+    EXPECT_EQ(ring.findNode("hello") -> getId(), node.getId());
 }
 
 TEST(HashRingTest, TwoNodeSplit) {
@@ -26,7 +25,7 @@ TEST(HashRingTest, TwoNodeSplit) {
     for(int i = 0; i < 1000; i++) {
         auto n = ring.findNode(std::to_string(i));
 
-        if(n->id_ == "node-1") {
+        if(n->getId() == "node-1") {
             counts[0]++;
         } else {
             counts[1]++;
@@ -53,7 +52,7 @@ TEST(HashRingTest, NodeRemovalWorks) {
     for(int i = 0; i < 1000; i++) {
         auto n = ring.findNode(std::to_string(i));
 
-        if(n->id_ == "node-1") {
+        if(n->getId() == "node-1") {
             counts[0]++;
         } else {
             counts[1]++;
@@ -69,7 +68,7 @@ TEST(HashRingTest, NodeRemovalWorks) {
     for(int i = 0; i < 1000; i++) {
         auto n = ring.findNode(std::to_string(i));
 
-        if(n->id_ == "node-1") {
+        if(n->getId() == "node-1") {
             counts[0]++;
         } else {
             counts[1]++;
@@ -94,7 +93,7 @@ TEST(HashRingTest, FiveNodeSplit) {
     for(int i = 0; i < keys; i++) {
         auto n = ring.findNode(std::to_string(i));
 
-        counts[std::stoi(n->id_)]++;
+        counts[std::stoi(n->getId())]++;
     }
 
     const int tolerance = 20;

@@ -4,10 +4,7 @@
 #include <memory>
 #include <set>
 #include <string>
-
-struct Node {
-    std::string id_;
-};
+#include "node.h"
 
 struct VirtualNode {
     std::string id_;

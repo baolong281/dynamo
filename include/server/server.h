@@ -1,9 +1,11 @@
 #pragma once
 
+#include "hash_ring/hash_ring.h"
 #include "logging/logger.h"
 #include "storage/storage_engine.h"
 #include "httplib.h"
 #include <cstddef>
+#include <memory>
 #include <vector>
 #include <mutex>
 
@@ -11,13 +13,23 @@
 template<typename Engine>
 class Server {
     public:
-        explicit Server(Engine&& engine) : engine_(std::move(engine)) {
+        explicit Server(std::shared_ptr<Engine> engine, std::shared_ptr<HashRing> ring) : engine_(engine), ring_(ring) {
             svr_.Get("/get", [this](const httplib::Request & req, httplib::Response &res) {
                 this->handleGet(req, res);
             });
             svr_.Post("/put", [this](const httplib::Request & req, httplib::Response &res) {
                 this->handlePut(req, res);
+                std::string key{req.get_header_value("Key")};
+                auto node = ring_ -> findNode(key);
+                Logger::instance().debug("replicating key: " + key + " to node: " + node -> getId());
+                node -> send_put(key, engine_ -> get(key));
             });
+
+            svr_.Post("/replication/put", [this](const httplib::Request & req, httplib::Response &res) {
+                Logger::instance().debug("Replication call for key: " + req.get_header_value("Key"));
+                this->handlePut(req, res);
+            });
+
             Logger::instance().info(
                 "endpoints /get /put registered!"
             );
@@ -32,7 +44,8 @@ class Server {
     }
 
     private:
-        Engine engine_;
+        std::shared_ptr<Engine> engine_;
+        std::shared_ptr<HashRing> ring_;
         httplib::Server svr_;
         std::mutex mu_;
 
@@ -46,7 +59,7 @@ class Server {
             std::string key{req.get_header_value("Key")};
 
             mu_.lock();
-            ByteString binary_data = engine_.get(key);
+            ByteString binary_data = engine_ -> get(key);
             mu_.unlock();
 
             Logger::instance().debug(
@@ -80,7 +93,7 @@ class Server {
             );
 
             mu_.lock();
-            engine_.put(key, data);
+            engine_ -> put(key, data);
             mu_.unlock();
 
         }
