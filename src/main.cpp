@@ -1,4 +1,5 @@
 #include "hash_ring/hash_ring.h"
+#include "hash_ring/quorom.h"
 #include "storage/disk_engine.h"
 #include "server/server.h"
 #include <memory>
@@ -20,16 +21,19 @@ int main(int argc, char* argv[]) {
     auto db = std::make_shared<DiskEngine>(std::to_string(port));
     auto ring = std::make_shared<HashRing>(1000);
 
+    Node parent{"localhost", port};
+    ring -> addNode(parent);
 
-    Node one{"localhost", 8080};
-    Node two{"localhost", 8081};
-    Node three{"localhost", 8082};
+    std::vector<int> ports{8080, 8081, 8082};
+    ports.erase(std::remove(ports.begin(), ports.end(), port));
 
-    ring -> addNode(one);
-    ring -> addNode(two);
-    ring -> addNode(three);
+    for(auto p : ports) {
+        ring -> addNode({"localhost", p});
+    }
 
-    Server service{db, ring};
+    auto quorom = std::make_shared<Quorom>(1, 1, 1, std::make_shared<Node>(parent));
+
+    Server service{db, ring, quorom};
 
     service.start("0.0.0.0", port);
 }

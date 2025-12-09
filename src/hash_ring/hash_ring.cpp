@@ -5,7 +5,6 @@
 #include <openssl/md5.h>
 #include <stdexcept>
 #include <unordered_set>
-#include <utility>
 #include <vector>
 
 #define RING_SIZE ULLONG_MAX
@@ -84,7 +83,6 @@ void HashRing::removeNode(const std::string& node_id) {
 }
 
 std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key, size_t n) {
-
     // make n minimum of available nodes
     // does this make sense to do
     n = std::min(n, nodes_.size());
@@ -103,8 +101,13 @@ std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key
     std::vector<std::shared_ptr<Node>> top_nodes{};
     std::unordered_set<std::string> seen{};
 
+    int counter{0};
+
     while(n > 0) {
         // wrap around
+        if(counter > node_ring_.size()) {
+            throw std::runtime_error("Infinite looping, something wrong with getting next nodes. Possibly all nodes are the same? ");
+        }
         if(it == node_ring_.end()) {
             it = node_ring_.begin();
         }
@@ -114,6 +117,7 @@ std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key
             n--;
         }
         it++;
+        counter++;
     }
 
     return top_nodes;

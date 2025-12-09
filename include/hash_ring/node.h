@@ -23,6 +23,10 @@ class Node {
             client_ -> Post("/replication/put", headers, data, "application/octet-stream");
         }
 
+        std::string getFullAddress() {
+            return addr_ + ":" + std::to_string(port_);
+        }
+
         std::string getId() {
             return id_;
         }
