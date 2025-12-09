@@ -18,6 +18,9 @@ class Server {
             svr_.Post("/put", [this](const httplib::Request & req, httplib::Response &res) {
                 this->handlePut(req, res);
             });
+            Logger::instance().info(
+                "endpoints /get /put registered!"
+            );
         }
     
     // start in new thread (?)

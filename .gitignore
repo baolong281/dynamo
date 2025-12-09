@@ -42,3 +42,50 @@
 .cache/
 build/
 compile_commands.json
+
+
+# Build directories and files
+build/
+bin/
+obj/
+*.o
+*.lo
+*.la
+*.so
+*.a
+*.lib
+*.dll
+*.exe
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+CTestTestfile.cmake
+_CPack_Packages/
+
+# GoogleTest specific ignores (if not managing as a submodule/package)
+# If you are including GoogleTest source directly in your project and
+# want to ignore its generated files or documentation, you might add:
+# googletest/build/
+# googletest/lib/
+# googletest/doc/
+
+# IDE specific files
+.idea/
+.vscode/
+*.suo
+*.user
+*.ncb
+*.opensdf
+*.sdf
+*.VC.db
+
+# Other common ignores
+*~
+*.bak
+*.swp
+
+googletest*/
+googletest*

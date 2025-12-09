@@ -11,7 +11,7 @@ template <typename EngineImpl>
 class StorageEngine {
     public:
         Value get(const std::string &key) {
-            static_cast<EngineImpl*>(this) -> get(key);
+            return static_cast<EngineImpl*>(this) -> get(key);
         }
 
         void put(const std::string &key, const Value value) {
