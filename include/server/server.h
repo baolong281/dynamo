@@ -11,7 +11,7 @@
 template<typename Engine>
 class Server {
     public:
-        explicit Server(Engine engine) : engine_(std::move(engine)) {
+        explicit Server(Engine&& engine) : engine_(std::move(engine)) {
             svr_.Get("/get", [this](const httplib::Request & req, httplib::Response &res) {
                 this->handleGet(req, res);
             });
@@ -45,23 +45,17 @@ class Server {
 
             std::string key{req.get_header_value("Key")};
 
-
             mu_.lock();
-            auto binary_data = engine_.get(key).data;
+            ByteString binary_data = engine_.get(key);
             mu_.unlock();
-
-            std::string data_body(
-                reinterpret_cast<const char*>(binary_data.data()), 
-                binary_data.size()
-            );
 
             Logger::instance().debug(
                 "Fetching key: " + key + " Body: "
-                + data_body
+                + binary_data
             );
 
             res.set_header("Content-Type", "application/octet-stream");
-            res.set_content(data_body, "application/octet-stream"); // The second argument is for completeness but the header is already set
+            res.set_content(binary_data, "application/octet-stream"); 
 
             res.status = 200;
         }
@@ -78,15 +72,7 @@ class Server {
             auto data = req.body;
             std::vector<std::byte> bytes;
 
-
-            // make better
-            for(auto c : data) {
-                bytes.push_back(static_cast<std::byte>(c));
-            }
-
-
             std::string key{req.get_header_value("Key")};
-            Value value{bytes};
 
             Logger::instance().debug(
                 "Inserting key: " + key + " Body: "
@@ -94,7 +80,7 @@ class Server {
             );
 
             mu_.lock();
-            engine_.put(key, value);
+            engine_.put(key, data);
             mu_.unlock();
 
         }

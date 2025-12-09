@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.14)
 project(Dynamo VERSION 1.0 LANGUAGES CXX)
+include(FetchContent)
 
 option(BUILD_TESTING "Build tests" ON)
 
@@ -8,6 +9,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(Boost REQUIRED)
+
+find_path(LEVELDB_INCLUDE_DIR leveldb/db.h
+    HINTS /opt/homebrew/opt/leveldb/include
+)
+
+find_library(LEVELDB_LIBRARY NAMES leveldb
+    HINTS /opt/homebrew/opt/leveldb/lib
+)
 
 find_path(HTTPLIB_INCLUDE_DIR
     NAMES httplib.h
@@ -34,12 +43,14 @@ target_include_directories(dynamo
         ${Boost_INCLUDE_DIRS}
         ${HTTPLIB_INCLUDE_DIR}
         ${OPENSSL_INCLUDE_DIR}
+        ${LEVELDB_INCLUDE_DIR}
 )
 
 target_link_libraries(dynamo
     PUBLIC
         ${OPENSSL_CRYPTO_LIBRARY}
         ${OPENSSL_SSL_LIBRARY}
+        ${LEVELDB_LIBRARY}
 )
 
 add_executable(app

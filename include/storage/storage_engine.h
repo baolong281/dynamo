@@ -1,20 +1,17 @@
 #pragma once
 
-#include <cstddef>
-#include <vector>
+#include <string>
 
-struct Value {
-    std::vector<std::byte> data;
-};
+using ByteString = std::string;
 
 template <typename EngineImpl>
 class StorageEngine {
     public:
-        Value get(const std::string &key) {
+        ByteString get(const std::string &key) {
             return static_cast<EngineImpl*>(this) -> get(key);
         }
 
-        void put(const std::string &key, const Value value) {
+        void put(const std::string &key, const ByteString value) {
             static_cast<EngineImpl*>(this) -> put(key, value);
         }
 };

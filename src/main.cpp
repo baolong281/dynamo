@@ -1,9 +1,9 @@
-#include "storage/memory_engine.h"
+#include "storage/disk_engine.h"
 #include "server/server.h"
 
 int main() {
-    MemoryEngine db{};
-    Server service{db};
+    DiskEngine db{};
+    Server service{std::move(db)};
 
     service.start("0.0.0.0", 8080);
 }

@@ -8,7 +8,7 @@ class MemoryEngine : public StorageEngine<MemoryEngine> {
     public:
         MemoryEngine() = default;
 
-        Value get(const std::string &key) {
+        ByteString get(const std::string &key) {
             auto it = map_.find(key);
             if(it != map_.end()) {
                 return it -> second;
@@ -16,10 +16,10 @@ class MemoryEngine : public StorageEngine<MemoryEngine> {
             throw std::runtime_error("Key not found");
         }
 
-        void put(const std::string &key, const Value value) {
+        void put(const std::string &key, const ByteString value) {
             map_[key] = value;
         }
     
     private: 
-        boost::unordered_flat_map<std::string, Value>  map_;
+        boost::unordered_flat_map<std::string, ByteString>  map_;
 };
