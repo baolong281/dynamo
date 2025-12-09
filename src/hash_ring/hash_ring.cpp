@@ -1,5 +1,12 @@
 #include "hash_ring/hash_ring.h"
+#include <algorithm>
+#include <cstddef>
+#include <memory>
 #include <openssl/md5.h>
+#include <stdexcept>
+#include <unordered_set>
+#include <utility>
+#include <vector>
 
 #define RING_SIZE ULLONG_MAX
 
@@ -74,4 +81,40 @@ void HashRing::removeNode(const std::string& node_id) {
             ++it;
         }
     }
+}
+
+std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key, size_t n) {
+
+    // make n minimum of available nodes
+    // does this make sense to do
+    n = std::min(n, nodes_.size());
+
+    auto position_idx = md5_hash_64(key);
+
+    auto it = std::upper_bound(
+        node_ring_.begin(),
+        node_ring_.end(),
+        position_idx,
+        [](uint64_t pos, const VirtualNode& vn) {
+            return pos < vn.position_;
+        }
+    );
+
+    std::vector<std::shared_ptr<Node>> top_nodes{};
+    std::unordered_set<std::string> seen{};
+
+    while(n > 0) {
+        // wrap around
+        if(it == node_ring_.end()) {
+            it = node_ring_.begin();
+        }
+        if(seen.find(it ->parent_ -> getId()) == seen.end()) {
+            seen.insert(it->parent_->getId());
+            top_nodes.push_back(it->parent_);
+            n--;
+        }
+        it++;
+    }
+
+    return top_nodes;
 }

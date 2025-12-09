@@ -35,9 +35,7 @@ class DiskEngine : public StorageEngine<DiskEngine> {
 
         ByteString get(const std::string &key) {
             std::string data{};
-            Logger::instance().info("fetching...");
             leveldb::Status s = db_ -> Get(leveldb::ReadOptions(), key, &data);
-            Logger::instance().info("fetched");
             if(!s.ok()) {
                 throw std::runtime_error("Error fetching key");
             }

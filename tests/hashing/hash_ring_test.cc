@@ -101,3 +101,92 @@ TEST(HashRingTest, FiveNodeSplit) {
         EXPECT_LT(std::abs(count - keys / 5), tolerance) << "count: " << count << "tolerance: " << tolerance;
     }
 }
+
+TEST(HashRingTest, getNextNodes) {
+    HashRing ring{1};
+
+    for(int i = 0; i < 2; i++) {
+        ring.addNode({
+            std::to_string(i)
+        });
+    }
+
+    auto node_id = ring.findNode("hello") ->getId();
+    std::vector<std::string> order{node_id, node_id == "0" ? "1" : "0"};
+    auto output = ring.getNextNodes("hello", 2);
+
+    for(int i = 0; i < 1; i++ ){
+        EXPECT_EQ(output[i] -> getId() , order[i]) << "Order does not match: " << output[i] -> getId() << ", " << order[i];
+    }
+}
+
+TEST(HashRingTest, getNextNodesFiveUnique) {
+    HashRing ring{1};
+
+    for(int i = 0; i < 5; i++) {
+        ring.addNode({
+            std::to_string(i)
+        });
+    }
+
+    auto output = ring.getNextNodes("hello", 5);
+
+    EXPECT_EQ(output.size(), 5);
+
+    std::unordered_set<std::string> ids;
+    for (auto &n : output) {
+        ids.insert(n->getId());
+    }
+
+    EXPECT_EQ(ids.size(), 5);
+}
+
+TEST(HashRingTest, getNextNodesVnodes) {
+    HashRing ring{1000};
+
+    for(int i = 0; i < 50; i++) {
+        ring.addNode({
+            std::to_string(i)
+        });
+    }
+
+    auto output = ring.getNextNodes("hello", 10);
+
+    for(auto &node : output){
+        std::cout << node -> getId() << " ";
+    }
+
+    EXPECT_EQ(output.size(), 10);
+
+    std::unordered_set<std::string> ids;
+    for (auto &n : output) {
+        ids.insert(n->getId());
+    }
+
+    EXPECT_EQ(ids.size(), 10);
+}
+
+TEST(HashRingTest, getNextNodesVnodesBig) {
+    HashRing ring{1000};
+
+    for(int i = 0; i < 3; i++) {
+        ring.addNode({
+            std::to_string(i)
+        });
+    }
+
+    auto output = ring.getNextNodes("hello", 10);
+
+    for(auto &node : output){
+        std::cout << node -> getId() << " ";
+    }
+
+    EXPECT_EQ(output.size(), 3);
+
+    std::unordered_set<std::string> ids;
+    for (auto &n : output) {
+        ids.insert(n->getId());
+    }
+
+    EXPECT_EQ(ids.size(), 3);
+}
