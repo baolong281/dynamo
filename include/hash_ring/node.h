@@ -1,6 +1,7 @@
 #pragma once
 
 #include "httplib.h"
+#include "logging/logger.h"
 #include <memory>
 #include <string>
 
@@ -14,13 +15,19 @@ class Node {
             port_(port), 
             client_(std::make_unique<httplib::Client>(addr, port)) {};
 
-        void send_put(const std::string& key, const std::string& data) {
+        bool replicate_put(const std::string& key, const std::string& data) {
             httplib::Headers headers{
                 {"Key", key},
                 {"Content-Type", "application/octet-stream"}
             };
 
-            client_ -> Post("/replication/put", headers, data, "application/octet-stream");
+            Logger::instance().debug("Replicating key: " + key + " to node " + getId());
+            auto res = client_ -> Post("/replication/put", headers, data, "application/octet-stream");
+            if(res) {
+                return res->status == httplib::StatusCode::OK_200;
+            } else {
+                return false;
+            }
         }
 
         std::string getFullAddress() {

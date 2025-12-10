@@ -5,7 +5,6 @@
 #include "logging/logger.h"
 #include "storage/storage_engine.h"
 #include "httplib.h"
-#include <algorithm>
 #include <cstddef>
 #include <memory>
 #include <string>
@@ -25,9 +24,7 @@ class Server {
 			res.set_header("Access-Control-Allow-Origin", "*");
 		});
             svr_.Get("/get", [this](const httplib::Request & req, httplib::Response &res) {
-                res.set_header("Access-Control-Allow-Origin", "*"); 
-                res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
+                this -> setCORS(req, res);
 
                 if(!req.has_header("Key")) {
                     res.status = 400;
@@ -44,14 +41,22 @@ class Server {
             });
 
             svr_.Post("/put", [this](const httplib::Request & req, httplib::Response &res) {
-                res.set_header("Access-Control-Allow-Origin", "*"); 
-                res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-                res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
+                this -> setCORS(req, res);
                 if(handleRedirect(req, res, "/put")) {
                     return;
                 }
                 Logger::instance().debug("Running put operation on key: " + req.get_header_value("Key"));
+
                 this->handlePut(req, res);
+
+                bool success = quorom_->replicatePuts(req.get_header_value("Key"), req.body);
+
+                if(success) {
+                    res.status = 200;
+                } else {
+                    res.status = 500;
+                }
+
             });
 
             svr_.Post("/replication/put", [this](const httplib::Request & req, httplib::Response &res) {
@@ -79,27 +84,38 @@ class Server {
         httplib::Server svr_;
         std::mutex mu_;
 
+        bool setCORS(const httplib::Request &req, httplib::Response &res) { 
+            res.set_header("Access-Control-Allow-Origin", "*"); 
+            res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
+        }
+
         // returns true if we are in the wrong partition and need to redirect
         bool handleRedirect(const httplib::Request &req, httplib::Response &res, std::string endpoint) { 
             std::string key{req.get_header_value("Key")};
-            auto preference_list = ring_->getNextNodes(key, quorom_->getN());
+            // auto preference_list = ring_->getNextNodes(key, quorom_->getN());
             auto current_node = quorom_->getCurrNode();
+            auto coordination_node = ring_->findNode(key);
 
-            for(auto n : preference_list) {
-                Logger::instance().info("node: " + n ->getId());
+            if(current_node->getId() != coordination_node->getId()) {
+                std::string node_url{"http://" + coordination_node -> getFullAddress() + endpoint};
+                Logger::instance().debug("Redirecting request for key: " + key + " to node: " + node_url);
+                res.status = 307; 
+                res.set_header("Location", node_url);
+                return true;
             }
 
-            if(std::all_of(preference_list.begin(), preference_list.end(), 
-                [this, current_node](auto node) {
-                    return node -> getId() != current_node->getId();
-                })) {
-                    // need to put http beacuse cors or something
-                    std::string node_url{"http://" + preference_list.front() -> getFullAddress() + endpoint};
-                    Logger::instance().debug("Redirecting request for key: " + key + " to node: " + node_url);
-                    res.status = 307; 
-                    res.set_header("Location", node_url);
-                    return true;
-                }
+            // if(std::all_of(preference_list.begin(), preference_list.end(), 
+            //     [this, current_node](auto node) {
+            //         return node -> getId() != current_node->getId();
+            //     })) {
+            //         // need to put http beacuse cors or something
+            //         std::string node_url{"http://" + preference_list.front() -> getFullAddress() + endpoint};
+            //         Logger::instance().debug("Redirecting request for key: " + key + " to node: " + node_url);
+            //         res.status = 307; 
+            //         res.set_header("Location", node_url);
+            //         return true;
+            //     }
 
             return false;
         }
@@ -123,6 +139,7 @@ class Server {
             res.status = 200;
         }
 
+        // writes can fail, make this maybe return an error in the future
         void handlePut(const httplib::Request &req, httplib::Response &res){ 
             if(req.get_header_value("Content-Type") != "application/octet-stream" || !req.has_header("Key")
             ) {

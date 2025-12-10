@@ -1,6 +1,7 @@
 #include "hash_ring/hash_ring.h"
 #include <algorithm>
 #include <cstddef>
+#include <iostream>
 #include <memory>
 #include <openssl/md5.h>
 #include <stdexcept>
