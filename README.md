@@ -13,6 +13,9 @@ Then open http://localhost:3000 in your browser.
 TODO: 
 - [x] Basic in memory storage layer and http connections
     - [] investigate leveldb stalling
-- [ ] Consistent hashing and partitioning across virtual nodes
-- [ ] Persistent storage and crash recovery
-- [ ] Replication
+- [x] Consistent hashing and partitioning across virtual nodes
+- [x] Persistent storage and crash recovery
+- [x] Replication
+- [x] R/W quorom
+- [ ] data versioning and vector clocks
+- [ ] failure handling (?)
