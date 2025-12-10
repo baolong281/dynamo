@@ -21,11 +21,12 @@ int main(int argc, char* argv[]) {
     auto db = std::make_shared<DiskEngine>(std::to_string(port));
     auto ring = std::make_shared<HashRing>(1000);
 
+
     Node parent{"localhost", port};
     ring -> addNode(parent);
 
     std::vector<int> ports{8080, 8081, 8082};
-    ports.erase(std::remove(ports.begin(), ports.end(), port));
+    ports.erase(std::remove(ports.begin(), ports.end(), port), ports.end());
 
     for(auto p : ports) {
         ring -> addNode({"localhost", p});

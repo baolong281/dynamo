@@ -7,6 +7,7 @@
 #include "httplib.h"
 #include <cstddef>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <vector>
 #include <mutex>
@@ -16,13 +17,15 @@ template<typename Engine>
 class Server {
     public:
         explicit Server(std::shared_ptr<Engine> engine, std::shared_ptr<HashRing> ring, std::shared_ptr<Quorom> quorom) : engine_(engine), ring_(ring), quorom_(quorom) {
+
             svr_.Options("/(.*)",
 			[&](const httplib::Request & /*req*/, httplib::Response &res) {
-			res.set_header("Access-Control-Allow-Methods", " POST, GET, OPTIONS");
-			res.set_header("Content-Type", "application/octet-stream");
-			res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
-			res.set_header("Access-Control-Allow-Origin", "*");
-		});
+                res.set_header("Access-Control-Allow-Methods", " POST, GET, OPTIONS");
+                res.set_header("Content-Type", "application/octet-stream");
+                res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
+                res.set_header("Access-Control-Allow-Origin", "*");
+            });
+
             svr_.Get("/get", [this](const httplib::Request & req, httplib::Response &res) {
                 this -> setCORS(req, res);
 
@@ -36,8 +39,32 @@ class Server {
                     return;
                 }
 
-                Logger::instance().debug("Running get operation on key: " + req.get_header_value("Key"));
-                this->handleGet(req, res);
+                std::string key{req.get_header_value("Key")};
+                Logger::instance().debug("Running get operation on key: " + key);
+
+                mu_.lock();
+                ByteString local_value = engine_ -> get(key);
+                mu_.unlock();
+
+                try {
+                    std::vector<ByteString> replica_values = this -> quorom_ -> get(key);
+                    replica_values.push_back(local_value);
+
+
+                    for(auto &s : replica_values) {
+                        Logger::instance().debug("Reading value: " + s);
+                    }
+
+                    res.set_header("Content-Type", "application/octet-stream");
+                    res.set_content(replica_values.front(), "application/octet-stream"); 
+                    res.status = 200;
+
+
+                } catch(std::runtime_error e) {
+                    res.status = 500;
+                    res.set_content(e.what(), "tex/plain");
+                    return;
+                }
             });
 
             svr_.Post("/put", [this](const httplib::Request & req, httplib::Response &res) {
@@ -49,7 +76,7 @@ class Server {
 
                 this->handlePut(req, res);
 
-                bool success = quorom_->replicatePuts(req.get_header_value("Key"), req.body);
+                bool success = quorom_->put(req.get_header_value("Key"), req.body);
 
                 if(success) {
                     res.status = 200;
@@ -60,8 +87,13 @@ class Server {
             });
 
             svr_.Post("/replication/put", [this](const httplib::Request & req, httplib::Response &res) {
-                Logger::instance().debug("Replication call for key: " + req.get_header_value("Key"));
+                Logger::instance().debug("Replication put call for key: " + req.get_header_value("Key"));
                 this->handlePut(req, res);
+            });
+
+            svr_.Post("/replication/get", [this](const httplib::Request & req, httplib::Response &res) {
+                Logger::instance().debug("Replication get call for key: " + req.get_header_value("Key"));
+                this->handleGet(req, res);
             });
 
             Logger::instance().info(
@@ -84,7 +116,7 @@ class Server {
         httplib::Server svr_;
         std::mutex mu_;
 
-        bool setCORS(const httplib::Request &req, httplib::Response &res) { 
+        void setCORS(const httplib::Request &req, httplib::Response &res) { 
             res.set_header("Access-Control-Allow-Origin", "*"); 
             res.set_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
             res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
