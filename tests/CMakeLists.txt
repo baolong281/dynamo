@@ -34,3 +34,16 @@ target_link_libraries(test_serializer
 )
 
 gtest_discover_tests(test_serializer)
+
+add_executable(test_clock
+    clock/vector_clock_test.cc
+)
+
+target_link_libraries(test_clock
+    PRIVATE
+        Dynamo::dynamo
+        GTest::gtest
+        GTest::gtest_main
+)
+
+gtest_discover_tests(test_clock)

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -23,6 +24,19 @@ class VectorClock  {
         uint64_t get(const std::string& key) const {
             auto it = times_.find(key);
             return it != times_.end() ? it->second : 0;
+        }
+
+        bool isSibling(const VectorClock& other) const {
+            return !( *this < other ) && !( other < *this );
+        }
+
+        bool operator<(const VectorClock& other) const {
+            return std::all_of(
+                times_.begin(), times_.end(),
+                [&other](const auto& kv) {
+                        return kv.second <= other.get(kv.first);
+                    }
+                );
         }
 
         void increment(const std::string& key) {
