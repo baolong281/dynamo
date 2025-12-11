@@ -1,6 +1,5 @@
 #pragma once
 
-#include "logging/logger.h"
 #include "storage_engine.h"
 #include "leveldb/db.h"
 #include <cassert>
