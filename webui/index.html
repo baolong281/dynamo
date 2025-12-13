@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamo Dev Console</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1 class="title">
+                <span class="title-icon">⚡</span>
+                Dynamo Dev Console
+            </h1>
+            <p class="subtitle">Distributed Key-Value Store Interface</p>
+        </header>
+
+        <!-- Node Management Panel -->
+        <section class="card">
+            <h2 class="card-title">
+                <span class="icon">🌐</span>
+                Node Management
+            </h2>
+            <div class="add-node-form">
+                <input type="text" id="nodeHost" placeholder="Host (e.g., localhost)" value="localhost" class="input">
+                <input type="number" id="nodePort" placeholder="Port" value="8080" class="input input-port">
+                <button onclick="addNode()" class="btn btn-primary">
+                    <span class="btn-icon">+</span>
+                    Add Node
+                </button>
+            </div>
+            <div class="nodes-list" id="nodesList">
+                <div class="empty-state">No nodes configured. Add a node to get started.</div>
+            </div>
+        </section>
+
+        <!-- Operations Panel -->
+        <div class="operations-grid">
+            <!-- PUT Operation -->
+            <section class="card">
+                <h2 class="card-title">
+                    <span class="icon">📤</span>
+                    PUT Operation
+                </h2>
+                <div class="form-group">
+                    <label class="label">Target Node</label>
+                    <select id="putNodeSelect" class="select">
+                        <option value="">Select a node...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="label">Key</label>
+                    <input type="text" id="putKey" placeholder="Enter key" class="input">
+                    <small class="hint">Context will be used from previous GET if available</small>
+                </div>
+                <div class="form-group">
+                    <label class="label">Value</label>
+                    <textarea id="putValue" placeholder="Enter value (will be base64 encoded)" class="textarea" rows="3"></textarea>
+                </div>
+                <button onclick="executePut()" class="btn btn-success btn-block">
+                    <span class="btn-icon">▶</span>
+                    Execute PUT
+                </button>
+            </section>
+
+            <!-- GET Operation -->
+            <section class="card">
+                <h2 class="card-title">
+                    <span class="icon">📥</span>
+                    GET Operation
+                </h2>
+                <div class="form-group">
+                    <label class="label">Target Node</label>
+                    <select id="getNodeSelect" class="select">
+                        <option value="">Select a node...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="label">Key</label>
+                    <input type="text" id="getKey" placeholder="Enter key" class="input">
+                    <small class="hint">Context will be stored for subsequent PUT operations</small>
+                </div>
+                <button onclick="executeGet()" class="btn btn-info btn-block">
+                    <span class="btn-icon">▶</span>
+                    Execute GET
+                </button>
+            </section>
+        </div>
+
+        <!-- Request/Response Display -->
+        <section class="card response-card" id="responseSection" style="display: none;">
+            <h2 class="card-title">
+                <span class="icon">📊</span>
+                Request & Response
+                <button onclick="clearResponse()" class="btn-clear">Clear</button>
+            </h2>
+            
+            <!-- Request Details -->
+            <div class="request-section">
+                <h2 class="section-header">📤 Request</h2>
+                <div class="response-status" id="requestStatus"></div>
+                <div class="response-content">
+                    <h3 class="response-subtitle">Headers</h3>
+                    <pre id="requestHeaders" class="response-pre"></pre>
+                    <h3 class="response-subtitle">Body</h3>
+                    <pre id="requestBody" class="response-pre"></pre>
+                </div>
+            </div>
+
+            <!-- Response Details -->
+            <div class="response-section">
+                <h2 class="section-header">📥 Response</h2>
+                <div class="response-status" id="responseStatus"></div>
+                <div class="response-content">
+                    <h3 class="response-subtitle">Headers</h3>
+                    <pre id="responseHeaders" class="response-pre"></pre>
+                    <h3 class="response-subtitle">Body</h3>
+                    <pre id="responseBody" class="response-pre"></pre>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
