@@ -38,6 +38,11 @@ find_package(nlohmann_json 3.12.0 REQUIRED)
 
 add_library(dynamo STATIC
     src/hash_ring/hash_ring.cpp
+    src/hash_ring/node.cpp
+    src/hash_ring/quorom.cpp
+    src/logging/logger.cpp
+    src/storage/disk_engine.cpp
+    src/storage/memory_engine.cpp
 )
 
 add_library(Dynamo::dynamo ALIAS dynamo)

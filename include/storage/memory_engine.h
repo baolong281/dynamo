@@ -9,21 +9,11 @@ class MemoryEngine : public StorageEngine<MemoryEngine> {
     public:
         MemoryEngine() = default;
 
-        ByteString get(const std::string &key) {
-            auto it = map_.find(key);
-            if(it != map_.end()) {
-                return it -> second;
-            }
-            throw StorageError("Key not found");
-        }
+        ByteString get(const std::string &key);
 
-        bool contains(const std::string &key) {
-            return map_.contains(key);
-        }
+        bool contains(const std::string &key);
 
-        void put(const std::string &key, const ByteString value) {
-            map_[key] = value;
-        }
+        void put(const std::string &key, const ByteString value);
     
     private: 
         boost::unordered_flat_map<std::string, ByteString>  map_;
