@@ -7,34 +7,59 @@
 
 class Serializer {
     public:
-        static ByteString toBinary(const ValueList& valueList) {
+        template <typename Serializable>
+        static ByteString toBinary(const Serializable& obj) {
             std::stringstream ss;
 
             {
                 cereal::BinaryOutputArchive oarchive(ss);
-                oarchive(valueList);
+                oarchive(obj);
             }
 
             return ss.str();
         }
 
-        static ByteString toJson(const ValueList& valueList) {
+        template <typename Serializable>
+        static Serializable fromJson(const std::string& json)  {
+            Serializable input{};
+            std::stringstream ss(json);
+            {
+                cereal::JSONInputArchive archive(ss);
+                archive(input);
+            }
+
+            return input;
+        }
+
+        // if string is empty we just return the default constructed object
+        template <typename Serializable>
+        static Serializable fromBinary(const std::string& binary) {
+            Serializable output{};
+
+            if(binary.size() == 0) {
+                return output;
+            }
+
+            {
+                std::istringstream ss(binary);
+                cereal::BinaryInputArchive iarchive(ss);
+
+                iarchive(output); 
+            }
+            return output;
+        }
+
+        template <typename Serializable>
+        static ByteString toJson(const Serializable& obj) {
             std::stringstream ss;
 
             {
                 cereal::JSONOutputArchive oarchive(ss);
-                oarchive(valueList);
+                oarchive(obj);
             }
 
             return ss.str();
         }
 
-        static ValueList fromBinary(const std::string& binary) {
-            std::istringstream ss(binary);
-            cereal::BinaryInputArchive iarchive({ss});
 
-            ValueList output{};
-            iarchive(output);
-            return output;
-        }
 };

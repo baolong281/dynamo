@@ -15,7 +15,7 @@ TEST(SerializerTest, BinaryRoundTripMultipleValues) {
     ValueList original{val1, val2, val3};
 
     auto binary = Serializer::toBinary(original);
-    auto deserialized = Serializer::fromBinary(binary);
+    auto deserialized = Serializer::fromBinary<ValueList>(binary);
 
     ASSERT_EQ(original.size(), deserialized.size());
 
@@ -33,6 +33,6 @@ TEST(SerializerTest, BinaryRoundTripMultipleValues) {
 TEST(SerializerTest, EmptyValueList) {
     ValueList empty{};
     auto binary = Serializer::toBinary(empty);
-    auto deserialized = Serializer::fromBinary(binary);
+    auto deserialized = Serializer::fromBinary<ValueList>(binary);
     EXPECT_TRUE(deserialized.empty());
 }

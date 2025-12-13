@@ -9,8 +9,18 @@
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/string.hpp>
+#include <sstream>
 
 using ByteString = std::string;
+
+// client
+// get (json) key -> json key + context formatted
+// put (json) key, data, context (binary) -> OK 
+
+// rpcs
+// get_replica binary key in body -> binary valuelist
+// put_replace binary value in body -> OK 
+
 
 class VectorClock  {
     public:
@@ -18,12 +28,17 @@ class VectorClock  {
 
         template <class Archive>
         void serialize(Archive & archive) {
-            archive( times_ );
+            archive(times_);
         }
+
 
         uint64_t get(const std::string& key) const {
             auto it = times_.find(key);
             return it != times_.end() ? it->second : 0;
+        }
+
+        std::unordered_map<std::string, uint64_t> getTimes() {
+            return times_;
         }
 
         bool isSibling(const VectorClock& other) const {
@@ -40,12 +55,22 @@ class VectorClock  {
         }
 
         void increment(const std::string& key) {
-            if(times_.find(key) == times_.end()) {
-                times_[key] = 1;
-            } else {
-                times_[key]++;
-            }
+            times_[key]++;
         }
+
+        std::string toString() const {
+            std::ostringstream oss;
+            oss << "{";
+            bool first = true;
+            for (const auto& [k, v] : times_) {
+                if (!first) oss << ", ";
+                oss << k << ": " << v;
+                first = false;
+            }
+            oss << "}";
+            return oss.str();
+        }
+
 
     private:
         std::unordered_map<std::string, uint64_t> times_;
@@ -57,7 +82,10 @@ struct Value {
 
     template <class Archive>
     void serialize(Archive & archive) {
-        archive( data_, clock_ );
+        archive( 
+            data_,
+            clock_
+        );
     }
 };
 

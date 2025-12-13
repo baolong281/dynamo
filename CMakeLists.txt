@@ -4,7 +4,7 @@ include(FetchContent)
 
 option(BUILD_TESTING "Build tests" ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -30,6 +30,12 @@ set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR}/lib)
 find_library(OPENSSL_CRYPTO_LIBRARY crypto HINTS ${OPENSSL_LIB_DIR})
 find_library(OPENSSL_SSL_LIBRARY ssl HINTS ${OPENSSL_LIB_DIR})
 
+# json -------------
+
+find_package(nlohmann_json 3.12.0 REQUIRED)
+
+# ----------------------------
+
 add_library(dynamo STATIC
     src/hash_ring/hash_ring.cpp
 )
@@ -46,11 +52,13 @@ target_include_directories(dynamo
         ${LEVELDB_INCLUDE_DIR}
 )
 
+
 target_link_libraries(dynamo
     PUBLIC
         ${OPENSSL_CRYPTO_LIBRARY}
         ${OPENSSL_SSL_LIBRARY}
         ${LEVELDB_LIBRARY}
+        nlohmann_json::nlohmann_json
 )
 
 add_executable(app

@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
         ring -> addNode({"localhost", p});
     }
 
-    auto quorom = std::make_shared<Quorom>(3, 2, 2, std::make_shared<Node>(parent), ring);
+    auto quorom = std::make_shared<Quorom>(3, 3, 3, std::make_shared<Node>(parent), ring);
 
     Server service{db, ring, quorom};
 

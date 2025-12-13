@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error/storage_error.h"
 #include "storage_engine.h"
 #include <boost/unordered_map.hpp>
 #include <boost/unordered/unordered_flat_map.hpp>
@@ -13,7 +14,7 @@ class MemoryEngine : public StorageEngine<MemoryEngine> {
             if(it != map_.end()) {
                 return it -> second;
             }
-            throw std::runtime_error("Key not found");
+            throw StorageError("Key not found");
         }
 
         bool contains(const std::string &key) {

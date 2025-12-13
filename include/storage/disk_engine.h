@@ -1,8 +1,10 @@
 #pragma once
 
+#include "error/storage_error.h"
 #include "storage_engine.h"
 #include "leveldb/db.h"
 #include <cassert>
+#include "logging/logger.h"
 
 const std::string DB_PATH{"/tmp/dynamo"};
 
@@ -35,17 +37,17 @@ class DiskEngine : public StorageEngine<DiskEngine> {
         ByteString get(const std::string &key) {
             std::string data{};
             leveldb::Status s = db_ -> Get(leveldb::ReadOptions(), key, &data);
-            if(!s.ok()) {
-                throw std::runtime_error("Error fetching key");
+            // we do not consider not found to be an error
+            if(!s.ok() && !s.IsNotFound()) {
+                throw std::runtime_error("Error fetching key: " + s.ToString());
             }
             return data;
         }
 
         void put(const std::string &key, const ByteString value) {
-            std::string data{};
             leveldb::Status s = db_ -> Put(leveldb::WriteOptions(), key, value);
             if(!s.ok()) {
-                throw std::runtime_error("Error writing key");
+                throw StorageError("Error writing key: " + s.ToString());
             }
         }
 

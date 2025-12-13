@@ -1,8 +1,10 @@
 #pragma once
 
+#include "hash_ring/rpc.h"
 #include "httplib.h"
 #include "logging/logger.h"
-#include "storage/storage_engine.h"
+#include "storage/serializer.h"
+#include "storage/value.h"
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -17,14 +19,13 @@ class Node {
             port_(port), 
             client_(std::make_unique<httplib::Client>(addr, port)) {};
 
-        bool replicate_put(const std::string& key, const ByteString& data) {
-            httplib::Headers headers{
-                {"Key", key},
-                {"Content-Type", "application/octet-stream"}
-            };
-
+        bool replicate_put(const std::string& key, const Value& value) {
             Logger::instance().debug("Replicating key: " + key + " to node " + getId());
-            auto res = client_ -> Post("/replication/put", headers, data, "application/octet-stream");
+
+            PutRpc data{key, value};
+            auto serialized = Serializer::toBinary(data);
+            auto res = client_ -> Post("/replication/put", serialized, "application/octet-stream");
+
             if(res) {
                 return res->status == httplib::StatusCode::OK_200;
             } else {
@@ -32,16 +33,15 @@ class Node {
             }
         }
 
-        ByteString replicate_get(const std::string& key) {
+        ValueList replicate_get(const std::string& key) {
             httplib::Headers headers{
-                {"Key", key},
                 {"Content-Type", "application/octet-stream"}
             };
 
             Logger::instance().debug("Retrieving key: " + key + " from replcia node " + getId());
-            auto res = client_ -> Post("/replication/get", headers);
+            auto res = client_ -> Post("/replication/get", key, "application/octet-stream");
             if(res) {
-                return res->body;
+                return Serializer::fromBinary<ValueList>(res->body);
             } else {
                 throw std::runtime_error("Request to replicate node: " + getId() + " failed!");
             }

@@ -3,13 +3,13 @@
 #include "hash_ring/hash_ring.h"
 #include "logging/logger.h"
 #include "storage/storage_engine.h"
+#include "storage/value.h"
 #include <atomic>
 #include <memory>
 #include <mutex>
 #include <stdexcept>
 #include <string>
 #include <thread>
-#include <vector>
 
 class Quorom {
     public:
@@ -20,11 +20,12 @@ class Quorom {
                 R_(R), 
                 W_(W) {};
 
-        std::vector<ByteString> get(const std::string& key) {
+        // TODO: FIX SEGFAULT RACE CONDITION
+        ValueList get(const std::string& key) {
             auto preference_list = ring_->getNextNodes(key, N_);
             std::atomic<int> counter{0};
             std::atomic<bool> timeout{false};
-            std::vector<ByteString> values{};
+            ValueList values{};
             std::mutex mu{};
 
             for (auto node : preference_list) {
@@ -33,11 +34,14 @@ class Quorom {
                     continue;
                 }
 
+                // function will exit and values will be destroyed, resulting in segfault
                 std::thread([node, &key, &counter, &values, &mu] {
                     try {
                         std::lock_guard<std::mutex> lock(mu);
                         auto result = node->replicate_get(key);
-                        values.push_back(result);
+                        for(auto &v : result) {
+                            values.push_back(v);
+                        }
                         counter.fetch_add(1, std::memory_order_relaxed);
                     } catch (std::runtime_error e) {
                         Logger::instance().error(e.what());
@@ -61,7 +65,7 @@ class Quorom {
             return values;
         }
 
-        bool put(const std::string& key, const ByteString& value) {
+        bool put(const std::string& key, const Value& value) {
                 auto preference_list = ring_->getNextNodes(key, N_);
                 std::atomic<int> counter{0};
                 std::atomic<bool> timeout{false};
@@ -73,6 +77,9 @@ class Quorom {
                     }
 
                     std::thread([node, &key, &value, &counter] {
+                        // put rpcs are constructed over and over again in a loop
+                        // rewrite? 
+                        // TODO
                         auto result = node->replicate_put(key, value);
                         if (result) {
                             counter.fetch_add(1, std::memory_order_relaxed);
