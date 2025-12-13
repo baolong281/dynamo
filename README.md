@@ -17,5 +17,10 @@ TODO:
 - [x] Persistent storage and crash recovery
 - [x] Replication
 - [x] R/W quorom
+- [ ] retry mechanism (?)
 - [ ] data versioning and vector clocks
-- [ ] failure handling (?)
+    - [ ] verify this works well
+- [ ] hinted handoff mechanism
+- [ ] anti entropy mechanism
+- [ ] membership and failure detection
+- [ ] collect metrics 
