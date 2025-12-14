@@ -1,53 +1,54 @@
 #include "hash_ring/quorom.h"
 #include "hash_ring/node.h"
 #include "logging/logger.h"
+#include <future>
 #include <thread>
 #include <atomic>
 #include <mutex>
 
 ValueList Quorom::get(const std::string& key) {
-    auto preference_list = ring_->getNextNodes(key, N_);
-    std::atomic<int> counter{0};
-    std::atomic<bool> timeout{false};
-    ValueList values{};
-    std::mutex mu{};
+    auto nodes = ring_->getNextNodes(key, N_);
 
-    for (auto node : preference_list) {
+    ValueList values;
+    values.reserve(R_);
 
-        if(node->getId() == curr_node_->getId()) {
-            continue;
-        }
+    std::atomic<int> received{0};
+    std::mutex m;
 
-        // function will exit and values will be destroyed, resulting in segfault
-        std::thread([node, &key, &counter, &values, &mu] {
-            try {
-                std::lock_guard<std::mutex> lock(mu);
+    std::vector<std::future<void>> futures;
+
+    for (auto& node : nodes) {
+        if (node->getId() == curr_node_->getId()) continue;
+
+        futures.push_back(std::async(std::launch::async,
+            [&, node] {
                 auto result = node->replicate_get(key);
-                for(auto &v : result) {
-                    values.push_back(v);
+                {
+                    std::lock_guard lk(m);
+                    for(auto &v : result) {
+                        values.push_back(std::move(v));
+                    }
                 }
-                counter.fetch_add(1, std::memory_order_relaxed);
-            } catch (std::runtime_error e) {
-                Logger::instance().error(e.what());
+                received++;
             }
-        }).detach(); 
+        ));
     }
 
-    std::thread([&timeout] {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        timeout = true;
-    }).detach();
+    auto deadline = std::chrono::steady_clock::now()
+                  + std::chrono::milliseconds(100);
 
-    while (counter < R_  - 1 && !timeout) {
+    while (received.load() < R_ &&
+           std::chrono::steady_clock::now() < deadline) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    if(counter < R_ - 1) {
-        throw std::runtime_error("Did not recieve enough read responses!" + std::to_string(counter) + "<" + std::to_string(R_ - 1));
+    if (received.load() < R_) {
+        throw std::runtime_error("Not enough read responses");
     }
 
     return values;
 }
+
 
 bool Quorom::put(const std::string& key, const Value& value) {
         auto preference_list = ring_->getNextNodes(key, N_);

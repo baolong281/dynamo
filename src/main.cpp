@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
     auto ring = std::make_shared<HashRing>(1000);
     std::shared_ptr<Node> parent = std::make_shared<Node>(address, port);
 
-    auto quorom = std::make_shared<Quorom>(3, 3, 3, parent, ring);
+    auto quorom = std::make_shared<Quorom>(3, 2, 2, parent, ring);
     auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers);
 
     Server service{db, ring, quorom, gossip};
