@@ -22,13 +22,13 @@ fi
 echo "=================================================="
 echo "Starting bootstrap node on port 8080..."
 echo "=================================================="
-$EXECUTABLE --port 8080 --address localhost &
+$EXECUTABLE --port 8080 --address localhost 2>&1 | sed "s/^/[Node 8080] /" &
 sleep 2 # Give it a moment to start
 
 for i in {1..9}; do
     PORT=$((8080 + i))
     echo "Starting node on port $PORT..."
-    $EXECUTABLE --port $PORT --address localhost --bootstrap-servers localhost:8080 &
+    $EXECUTABLE --port $PORT --address localhost --bootstrap-servers localhost:8080 2>&1 | sed "s/^/[Node $PORT] /" &
 done
 
 echo "Cluster running. Press Ctrl+C to stop all nodes."

@@ -22,6 +22,7 @@ struct VirtualNodeCmp {
 uint64_t md5_hash_64(const std::string& key);
 
 //TODO: add iterator in the future over next ring nodes?
+//TODO: race conditions for addNode and findNode. we only want to block / sync on writes, as we can have concurrent reads
 class HashRing {
 public:
     explicit HashRing(int n_vnodes = 1000);

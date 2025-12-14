@@ -2,9 +2,11 @@
 
 **goal:** a highly available, eventually consistent, low latency kv store. 
 
+![image](./screenshot.png)
+
 ## Web UI
 
-To use the development web UI (avoids CORS errors):
+To use the development web UI 
 ```bash
 cd webui && ./serve.sh
 ```
