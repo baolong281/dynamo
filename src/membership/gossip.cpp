@@ -13,15 +13,6 @@
 void Gossip::transmitRandom(std::mt19937 &gen) {
     auto nodes = this->ring_->getNodes();
 
-    std::ostringstream oss;
-    oss << "ring state: ";
-    for(auto &[k, v] : state_) {
-        oss << k << ": " << (v.status_ == NodeState::Status::ACTIVE ? "Active" : "KILLED")
-            << ", ";
-    }
-    Logger::instance().debug(oss.str());
-
-
     std::vector<int> pool(nodes.size());
     std::iota(pool.begin(), pool.end(), 0);
 

@@ -283,13 +283,6 @@ body {
 /* Killed Status Styling - Minimalist */
 .status-killed {
     border: 1px solid #000;
-    background: repeating-linear-gradient(
-        45deg,
-        #fff,
-        #fff 10px,
-        #000 10px,
-        #000 12px
-    );
     border-bottom: 10px solid red;
 }
 /* Ensure text allows background to show or has distinctive look */

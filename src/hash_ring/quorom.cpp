@@ -52,8 +52,9 @@ ValueList Quorom::get(const std::string& key) {
 
 bool Quorom::put(const std::string& key, const Value& value) {
         auto preference_list = ring_->getNextNodes(key, N_);
-        std::atomic<int> counter{0};
-        std::atomic<bool> timeout{false};
+        std::atomic<int> received{0};
+
+        std::vector<std::future<void>> futures;
 
         for (auto node : preference_list) {
 
@@ -61,29 +62,29 @@ bool Quorom::put(const std::string& key, const Value& value) {
                 continue;
             }
 
-            std::thread([node, &key, &value, &counter] {
-                // put rpcs are constructed over and over again in a loop
-                // rewrite? 
-                // TODO
+            futures.push_back(std::async(std::launch::async, [&, node] {
                 auto result = node->replicate_put(key, value);
                 if (result) {
-                    counter.fetch_add(1, std::memory_order_relaxed);
+                    received.fetch_add(1, std::memory_order_relaxed);
                 } else {
                     Logger::instance().error("Put replication request for key '" + key + "' to node" + node->getId() + " failed!");
                 }
-            }).detach(); 
+            }));
         }
 
-        std::thread([&timeout] {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            timeout = true;
-        }).detach();
+        auto deadline = std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(100);
 
-        while (counter < W_  - 1 && !timeout) {
+        while (received.load() < W_ - 1 &&
+            std::chrono::steady_clock::now() < deadline) {
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
-        return counter >= W_ - 1;
+        if (received.load() < W_ - 1) {
+            throw std::runtime_error("Not enough responses for put requet");
+        }
+
+        return received >= W_ - 1;
 }
 
 int Quorom::getN() {
