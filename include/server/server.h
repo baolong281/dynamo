@@ -84,6 +84,20 @@ class Server {
                 res.status = 200;
             });
 
+            svr_.Post("/admin/membership", [this](const httplib::Request & req, httplib::Response &res) {
+                this -> setCORS(req, res);
+                json j = gossip_->getState();
+                res.status = 200;
+                res.set_content(j.dump(), "application/json");
+            });
+
+            svr_.Post("/admin/ring", [this](const httplib::Request & req, httplib::Response &res) {
+                this -> setCORS(req, res);
+                json j = ring_->getVirtualNodes();
+                res.status = 200;
+                res.set_content(j.dump(), "application/json");
+            });
+
             Logger::instance().info(
                 "endpoints successfully registered!"
             );

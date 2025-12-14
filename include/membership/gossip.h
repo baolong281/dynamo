@@ -4,10 +4,10 @@
 #include "logging/logger.h"
 #include <cstdint>
 #include <fstream>
-#include <iterator>
 #include <memory>
-#include <unordered_map>
 #include <string>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 struct NodeState {
     enum Status {
@@ -38,6 +38,8 @@ struct NodeState {
         return oss.str();
     }
 };
+
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(NodeState, id_, address_, port_, status_, incarnation_)
 
 using ClusterState = std::unordered_map<std::string, NodeState>;
 
@@ -83,6 +85,9 @@ class Gossip {
         void onRecieve(ClusterState &other_state);
         void transmitRandom(std::mt19937 &gen);
         void stop();
+        ClusterState getState() {
+            return state_;
+        }
 
     private:
         std::shared_ptr<HashRing> ring_;

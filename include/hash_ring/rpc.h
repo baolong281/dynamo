@@ -6,7 +6,6 @@
 using json = nlohmann::json;
 
 // binary serialized
-
 struct PutRpc {
 
     PutRpc() {};

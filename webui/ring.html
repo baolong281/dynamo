@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamo Ring Visualization</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container ring-container">
+        <header class="header">
+            <div class="header-nav">
+                <a href="index.html" class="btn btn-clear">← Back to Dashboard</a>
+            </div>
+            <h1 class="title">Hash Ring Visualization</h1>
+            <p class="subtitle">Visualizing Virtual Node Distribution</p>
+        </header>
+
+        <section class="card controls-card">
+            <div class="controls-row">
+                <button onclick="fetchRingData()" class="btn btn-primary">
+                    Refresh Ring
+                </button>
+                <div class="stats-group">
+                    <span class="stat-label">Total VNodes:</span>
+                    <span id="vnodeCount" class="stat-value">0</span>
+                </div>
+                <div class="stats-group">
+                    <span class="stat-label">Physical Nodes:</span>
+                    <span id="pnodeCount" class="stat-value">0</span>
+                </div>
+            </div>
+            <div class="controls-row zoom-controls">
+                <span class="label">Zoom:</span>
+                <button onclick="zoomIn()" class="btn btn-secondary">+</button>
+                <button onclick="zoomOut()" class="btn btn-secondary">-</button>
+                <button onclick="resetZoom()" class="btn btn-clear">Reset</button>
+            </div>
+        </section>
+
+        <section class="card canvas-card">
+            <div id="canvasWrapper" class="canvas-wrapper">
+                <canvas id="ringCanvas"></canvas>
+                <div id="tooltip" class="ring-tooltip" style="display: none;"></div>
+            </div>
+        </section>
+        
+        <section class="card legend-card">
+            <h3 class="card-title">Node Legend</h3>
+            <div id="ringLegend" class="ring-legend"></div>
+        </section>
+    </div>
+
+    <script src="ring.js"></script>
+</body>
+</html>

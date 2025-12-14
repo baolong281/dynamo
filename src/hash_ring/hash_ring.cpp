@@ -56,7 +56,6 @@ void HashRing::addNode(std::shared_ptr<Node> node) {
     for (int i = 0; i < n_vnodes_; i++) {
         std::string vnode_id = node -> getId() + "-" + std::to_string(i);
         uint64_t pos = md5_hash_64(vnode_id);
-
         node_ring_.insert(VirtualNode{vnode_id, pos, node});
     }
 

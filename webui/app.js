@@ -81,6 +81,115 @@ function updateNodeSelects() {
 
     putSelect.innerHTML = defaultOption + options;
     getSelect.innerHTML = defaultOption + options;
+
+    const membershipSelect = document.getElementById('membershipNodeSelect');
+    if (membershipSelect) {
+        membershipSelect.innerHTML = defaultOption + options;
+    }
+}
+
+async function fetchMembership() {
+    const node = document.getElementById('membershipNodeSelect').value;
+    const listContainer = document.getElementById('membershipList');
+
+    if (!node) {
+        showNotification('Please select a node to query', 'error');
+        return;
+    }
+
+    try {
+        const url = `http://${node}/admin/membership`;
+        const response = await fetch(url, {
+            method: 'POST',
+            mode: 'cors'
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        renderMembership(data);
+        
+        // Only show success notification if manually triggered (not polling)
+        if (!pollingInterval) {
+            showNotification('Membership status updated', 'success');
+        }
+
+    } catch (error) {
+        console.error('Membership fetch error:', error);
+        // Only show error in container if list is empty
+        if (!listContainer.hasChildNodes() || listContainer.innerHTML.includes('empty-state')) {
+             listContainer.innerHTML = `<div class="error-state">Failed to fetch membership: ${error.message}</div>`;
+        }
+        
+        // Don't spam notifications if polling
+        if (!pollingInterval) {
+            showNotification(`Failed to fetch membership: ${error.message}`, 'error');
+        }
+    }
+}
+
+function renderMembership(data) {
+    const listContainer = document.getElementById('membershipList');
+    
+    // Check if data is a map/object (ClusterState)
+    // The data structure based on gossip.h is map<string, NodeState>
+    // checking if we received an object/map
+    
+    if (!data || typeof data !== 'object') {
+        listContainer.innerHTML = '<div class="empty-state">Invalid data format received</div>';
+        return;
+    }
+
+    const nodes = Object.values(data);
+    
+    if (nodes.length === 0) {
+        listContainer.innerHTML = '<div class="empty-state">No members in cluster</div>';
+        return;
+    }
+
+    // Sort nodes: self/local first, then by ID
+    nodes.sort((a, b) => a.id_ > b.id_ ? 1 : -1);
+
+    listContainer.innerHTML = nodes.map(node => `
+        <div class="membership-card ${node.status_ === 0 ? 'status-active' : 'status-killed'}">
+            <div class="member-header">
+                <span class="member-id" title="${node.id_}">${node.id_.substring(0, 8)}...</span>
+                <span class="member-status badge">${node.status_ === 0 ? 'ACTIVE' : 'KILLED'}</span>
+            </div>
+            <div class="member-details">
+                <div class="detail-row">
+                    <span class="label">Address:</span>
+                    <span class="value">${node.address_}:${node.port_}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="label">Incarnation:</span>
+                    <span class="value">${node.incarnation_}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Live Update Logic
+let pollingInterval = null;
+
+function toggleLiveUpdate() {
+    const toggle = document.getElementById('liveUpdateToggle');
+    const isEnabled = toggle.checked;
+    
+    if (isEnabled) {
+        fetchMembership(); // Fetch immediately
+        pollingInterval = setInterval(fetchMembership, 2000); // 2 second interval
+        showNotification('Live updates enabled', 'success');
+    } else {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        showNotification('Live updates disabled', 'info');
+    }
 }
 
 // Base64 encoding/decoding utilities
