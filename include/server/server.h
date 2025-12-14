@@ -97,6 +97,11 @@ class Server {
         svr_.listen(ip, port);
     }
 
+    void stop() {
+        Logger::instance().debug("Stopping server...");
+        svr_.stop();
+    }
+
     private:
         std::shared_ptr<Engine> engine_;
         std::shared_ptr<HashRing> ring_;

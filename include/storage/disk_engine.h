@@ -1,6 +1,7 @@
 #pragma once
 
 #include "error/storage_error.h"
+#include "logging/logger.h"
 #include "storage_engine.h"
 #include <string>
 

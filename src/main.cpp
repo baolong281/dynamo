@@ -8,6 +8,12 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <csignal>
+
+std::atomic<bool> stop{false};
+void on_sigint(int) {
+    stop.store(true, std::memory_order_relaxed);
+}
 
 int main(int argc, char* argv[]) {
 
@@ -43,8 +49,21 @@ int main(int argc, char* argv[]) {
 
     auto quorom = std::make_shared<Quorom>(3, 2, 2, parent, ring);
     auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers);
-
     Server service{db, ring, quorom, gossip};
+
+    std::thread killer([&] {
+        while (!stop.load(std::memory_order_relaxed)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+        service.stop();
+        gossip->stop();
+    });
+
+    std::signal(SIGINT, on_sigint);
+
     gossip->start();
     service.start("0.0.0.0", port);
+
+    killer.join();
+    return 0;
 }

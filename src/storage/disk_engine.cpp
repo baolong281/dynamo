@@ -13,6 +13,7 @@ DiskEngine::DiskEngine(std::string id) {
 }
 
 DiskEngine::~DiskEngine() {
+    Logger::instance().debug("Killing disk engine...");
     delete db_;
 }
 

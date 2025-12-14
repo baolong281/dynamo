@@ -1,7 +1,10 @@
 #pragma once
 
 #include "hash_ring/hash_ring.h"
+#include "logging/logger.h"
 #include <cstdint>
+#include <fstream>
+#include <iterator>
 #include <memory>
 #include <unordered_map>
 #include <string>
@@ -46,23 +49,40 @@ class Gossip {
             fanout_(fanout),
             curr_node_(curr),
             bootstrap_servers_(bootstrap_servers) {
+                std::string path{
+                    "/tmp/" + curr->getAddr() + ":" + std::to_string(curr->getPort()) + "-gossip"
+                };
+
+                std::ifstream in(path);
+
+                uint64_t incarnation = 1;
+                if (in && !(in >> incarnation)) {
+                    incarnation = 1;
+                    Logger::instance().debug("Could not read gossip number from path: " + path + ". settning default instead");
+                }
+
+                Logger::instance().info("gossip number: " + std::to_string(incarnation));
+
                 NodeState initial{
                         curr->getId(),
                         curr->getAddr(),
                         curr->getPort(),
                         NodeState::Status::ACTIVE,
-                        1
+                        incarnation + 1
                     };
                 addState(initial);
             }
 
         ~Gossip() {
+            Logger::instance().debug("Killing gossip service...");
             running = false;
             if (t_.joinable()) t_.join();
         }
 
         void addState(NodeState state); 
         void onRecieve(ClusterState &other_state);
+        void transmitRandom(std::mt19937 &gen);
+        void stop();
 
     private:
         std::shared_ptr<HashRing> ring_;
