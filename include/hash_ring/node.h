@@ -17,6 +17,12 @@ class Node {
 
         std::string getAddr() { return addr_; }
         int getPort() { return port_; }
+        void setInactive() {
+            active_ = false;
+        }
+        void setActive() {
+            active_ = true;
+        }
 
     private:
         std::string id_;

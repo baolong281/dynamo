@@ -80,6 +80,17 @@ void Gossip::onRecieve(std::unordered_map<std::string, NodeState> &other_state) 
         if(it == state_.end()) {
             addState(v);
         }  else if(v.incarnation_ > state_[k].incarnation_) {
+            // we do a kill here
+            if(v.status_ == NodeState::Status::KILLED && state_[k].status_ == NodeState::Status::ACTIVE) {
+                ring_ -> removeNode(v.id_);
+            } else if (v.status_ == NodeState::Status::ACTIVE && state_[k].status_ == NodeState::Status::KILLED) {
+                // we have to make the new node and re-insert it again
+                std::shared_ptr<Node> new_node = std::make_shared<Node>(
+                    v.address_, v.port_
+                );
+
+                ring_->addNode(new_node);
+            }
             state_[k] = v;
         }
     }
@@ -107,6 +118,7 @@ void Gossip::stop() {
 
     std::random_device rd;
     std::mt19937 gen(rd());  
+    Logger::instance().info("Sending out kill requests over gossip...");
     transmitRandom(gen);
 
     Logger::instance().info("Writing gossip number to disk...");

@@ -169,6 +169,8 @@ class Server {
             std::string data_b64{body["data"]};
             std::string context_b64{body["context"]};
 
+            Logger::instance().debug("Running PUT for key: " + key);
+
             auto data = base64::from_base64(data_b64);
 
             VectorClock clock{};
@@ -187,8 +189,6 @@ class Server {
 
                 // if the clock is less than any, then we cannot put
                 bool current_clock_lt = std::any_of(values.begin(), values.end(), [&clock](Value &v) {
-                    Logger::instance().debug(clock.toString());
-                    Logger::instance().debug(v.clock_.toString());
                     return clock < v.clock_;
                 });
 
@@ -234,8 +234,11 @@ class Server {
                 values = Serializer::fromBinary<ValueList>(engine_ -> get(body["key"]));
             }
 
+            std::string key = body["key"];
+            Logger::instance().debug("Running PUT for key: " + key);
+
             try {
-                ValueList replica_values = quorom_ -> get(body["key"]);
+                ValueList replica_values = quorom_ -> get(key);
 
                 for(auto &v : replica_values) {
                     values.push_back(v);
@@ -255,6 +258,8 @@ class Server {
                 res.set_content(j.dump(), "application/json"); 
                 res.status = 200;
             } catch(std::runtime_error e) {
+                Logger::instance().error("Error fetching key: " + key);
+                Logger::instance().error(e.what());
                 res.status = 500;
                 res.set_content(e.what(), "text/plain");
                 return;

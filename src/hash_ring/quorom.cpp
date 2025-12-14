@@ -37,12 +37,12 @@ ValueList Quorom::get(const std::string& key) {
     auto deadline = std::chrono::steady_clock::now()
                   + std::chrono::milliseconds(100);
 
-    while (received.load() < R_ &&
+    while (received.load() < R_ - 1 &&
            std::chrono::steady_clock::now() < deadline) {
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
-    if (received.load() < R_) {
+    if (received.load() < R_ - 1) {
         throw std::runtime_error("Not enough read responses");
     }
 

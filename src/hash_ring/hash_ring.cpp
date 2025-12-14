@@ -31,6 +31,7 @@ HashRing::HashRing(int n_vnodes)
 HashRing::~HashRing() = default;
 
 std::shared_ptr<Node> HashRing::findNode(const std::string& key) {
+    std::shared_lock<std::shared_mutex> lock(rwlock_);
     auto position_idx = md5_hash_64(key);
 
     auto it = std::upper_bound(
@@ -51,6 +52,7 @@ std::shared_ptr<Node> HashRing::findNode(const std::string& key) {
 }
 
 void HashRing::addNode(std::shared_ptr<Node> node) {
+    std::unique_lock<std::shared_mutex> lock(rwlock_);
     for (int i = 0; i < n_vnodes_; i++) {
         std::string vnode_id = node -> getId() + "-" + std::to_string(i);
         uint64_t pos = md5_hash_64(vnode_id);
@@ -61,8 +63,8 @@ void HashRing::addNode(std::shared_ptr<Node> node) {
     nodes_.push_back(node);
 }
 
-
 void HashRing::removeNode(const std::string& node_id) {
+    std::unique_lock<std::shared_mutex> lock(rwlock_);
     for (auto it = node_ring_.begin(); it != node_ring_.end();) {
         if (it->parent_->getId() == node_id) {
             it = node_ring_.erase(it);
@@ -81,6 +83,7 @@ void HashRing::removeNode(const std::string& node_id) {
 }
 
 std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key, size_t n) {
+    std::shared_lock<std::shared_mutex> lock(rwlock_);
     // make n minimum of available nodes
     // does this make sense to do
     n = std::min(n, nodes_.size());
