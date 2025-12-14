@@ -1,40 +1,50 @@
 #include "hash_ring/hash_ring.h"
 #include "hash_ring/quorom.h"
+#include "membership/gossip.h"
 #include "storage/disk_engine.h"
 #include "server/server.h"
+#include <CLI/CLI.hpp>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 int main(int argc, char* argv[]) {
 
-    int port = 8080;  
+    CLI::App app{"Dynamo"};
 
-    if (argc > 1) {
-        try {
-            port = std::stoi(argv[1]);
-        } catch (...) {
-            std::cerr << "Invalid port: " << argv[1] << "\n";
-            return 1;
+    int port = 8080;
+    std::string address = "localhost";
+    std::vector<std::string> bootstrap_servers_raw{};
+
+    app.add_option("-p,--port", port, "Port to bind to");
+    app.add_option("-a,--address", address, "Address to bind to");
+    app.add_option("-b,--bootstrap-servers", bootstrap_servers_raw, "List of bootstrap servers (addr:port)");
+
+    CLI11_PARSE(app, argc, argv);
+
+    std::vector<std::pair<std::string, int>> bootstrap_servers{bootstrap_servers_raw.size()};
+
+    for(auto &s : bootstrap_servers_raw) {
+        Logger::instance().info("Bootstrap node: " + s);
+        auto delimiter_pos = s.find(':');
+        if (delimiter_pos != std::string::npos) {
+             std::string ip = s.substr(0, delimiter_pos);
+             int p = std::stoi(s.substr(delimiter_pos + 1));
+             bootstrap_servers.push_back({ip, p});
+        } else {
+             std::cerr << "Invalid bootstrap node format: " << s << "\n";
         }
     }
 
     auto db = std::make_shared<DiskEngine>(std::to_string(port));
     auto ring = std::make_shared<HashRing>(1000);
+    std::shared_ptr<Node> parent = std::make_shared<Node>(address, port);
 
+    auto quorom = std::make_shared<Quorom>(3, 3, 3, parent, ring);
+    auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers);
 
-    Node parent{"localhost", port};
-    ring -> addNode(parent);
-
-    std::vector<int> ports{8080, 8081, 8082};
-    ports.erase(std::remove(ports.begin(), ports.end(), port), ports.end());
-
-    for(auto p : ports) {
-        ring -> addNode({"localhost", p});
-    }
-
-    auto quorom = std::make_shared<Quorom>(3, 3, 3, std::make_shared<Node>(parent), ring);
-
-    Server service{db, ring, quorom};
-
+    Server service{db, ring, quorom, gossip};
+    gossip->start();
     service.start("0.0.0.0", port);
 }

@@ -2,14 +2,27 @@
 #include "hash_ring/rpc.h"
 #include "storage/serializer.h"
 #include "logging/logger.h"
+#include "storage/value.h"
 
-Node::Node(std::string id) : id_{id} {}
+Node::Node(std::string id) : id_{id}, active_(true) {}
 
 Node::Node(std::string addr, int port) : 
     id_(addr+":"+std::to_string(port)), 
     addr_(addr), 
     port_(port), 
-    client_(std::make_unique<httplib::Client>(addr, port)) {}
+    client_(std::make_unique<httplib::Client>(addr, port)),
+    active_(true) {}
+
+
+bool Node::send(const std::string& endpoint, const ByteString& data) {
+    auto res = client_ -> Post(endpoint, data, "application/octet-stream");
+
+    if(res) {
+        return res->status == httplib::StatusCode::OK_200;
+    } else {
+        return false;
+    }
+}
 
 bool Node::replicate_put(const std::string& key, const Value& value) {
     Logger::instance().debug("Replicating key: " + key + " to node " + getId());

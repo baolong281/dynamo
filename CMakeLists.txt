@@ -30,6 +30,15 @@ set(OPENSSL_LIB_DIR ${OPENSSL_ROOT_DIR}/lib)
 find_library(OPENSSL_CRYPTO_LIBRARY crypto HINTS ${OPENSSL_LIB_DIR})
 find_library(OPENSSL_SSL_LIBRARY ssl HINTS ${OPENSSL_LIB_DIR})
 
+# CLI11 ----------------------
+FetchContent_Declare(
+  CLI11
+  GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+  GIT_TAG        v2.4.2
+)
+FetchContent_MakeAvailable(CLI11)
+
+
 # json -------------
 
 find_package(nlohmann_json 3.12.0 REQUIRED)
@@ -43,6 +52,7 @@ add_library(dynamo STATIC
     src/logging/logger.cpp
     src/storage/disk_engine.cpp
     src/storage/memory_engine.cpp
+    src/membership/gossip.cpp
 )
 
 add_library(Dynamo::dynamo ALIAS dynamo)
@@ -72,6 +82,7 @@ add_executable(app
 
 target_link_libraries(app
     PRIVATE Dynamo::dynamo
+    PRIVATE CLI11::CLI11
 )
 
 install(TARGETS app

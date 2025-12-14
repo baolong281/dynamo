@@ -5,6 +5,7 @@
 #include "hash_ring/quorom.h"
 #include "hash_ring/rpc.h"
 #include "logging/logger.h"
+#include "membership/gossip.h"
 #include "storage/serializer.h"
 #include "httplib.h"
 #include "storage/value.h"
@@ -22,7 +23,12 @@ using json = nlohmann::json;
 template<typename Engine>
 class Server {
     public:
-        explicit Server(std::shared_ptr<Engine> engine, std::shared_ptr<HashRing> ring, std::shared_ptr<Quorom> quorom) : engine_(engine), ring_(ring), quorom_(quorom) {
+        explicit Server(std::shared_ptr<Engine> engine, std::shared_ptr<HashRing> ring, std::shared_ptr<Quorom> quorom, std::shared_ptr<Gossip> gossip) : 
+        engine_(engine), 
+        ring_(ring), 
+        quorom_(quorom) ,
+        gossip_(gossip)        
+        {
 
             svr_.Options("/(.*)",
 			[&](const httplib::Request & /*req*/, httplib::Response &res) {
@@ -71,8 +77,15 @@ class Server {
                 this->handleReplicationGet(req, res);
             });
 
+            // should be logically seperated?
+            svr_.Post("/admin/gossip", [this](const httplib::Request & req, httplib::Response &res) {
+                auto serialized = Serializer::fromBinary<ClusterState>(req.body);
+                this -> gossip_ -> onRecieve(serialized);
+                res.status = 200;
+            });
+
             Logger::instance().info(
-                "endpoints /get /put registered!"
+                "endpoints successfully registered!"
             );
         }
     
@@ -88,6 +101,7 @@ class Server {
         std::shared_ptr<Engine> engine_;
         std::shared_ptr<HashRing> ring_;
         std::shared_ptr<Quorom> quorom_;
+        std::shared_ptr<Gossip> gossip_;
         httplib::Server svr_;
         std::mutex mu_;
 

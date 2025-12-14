@@ -1,4 +1,5 @@
 #include <cstdlib>
+#include <memory>
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
@@ -6,16 +7,16 @@
 
 TEST(HashRingTest, SingleNodeWorks) {
     HashRing ring{1};
-    Node node{"node-1"};
+    auto node = std::make_shared<Node>("node-1");
 
     ring.addNode(node);
-    EXPECT_EQ(ring.findNode("hello") -> getId(), node.getId());
+    EXPECT_EQ(ring.findNode("hello") -> getId(), node->getId());
 }
 
 TEST(HashRingTest, TwoNodeSplit) {
     HashRing ring{1000};
-    Node node1{"node-1"};
-    Node node2{"node-2"};
+    auto node1 = std::make_shared<Node>("node-1");
+    auto node2 = std::make_shared<Node>("node-2");
 
     ring.addNode(node1);
     ring.addNode(node2);
@@ -41,8 +42,8 @@ TEST(HashRingTest, TwoNodeSplit) {
 
 TEST(HashRingTest, NodeRemovalWorks) {
     HashRing ring{1000};
-    Node node1{"node-1"};
-    Node node2{"node-2"};
+    auto node1 = std::make_shared<Node>("node-1");
+    auto node2 = std::make_shared<Node>("node-2");
 
     ring.addNode(node1);
     ring.addNode(node2);
@@ -82,9 +83,7 @@ TEST(HashRingTest, FiveNodeSplit) {
     HashRing ring{1000};
 
     for(int i = 0; i < 5; i++) {
-        ring.addNode({
-            std::to_string(i)
-        });
+        ring.addNode(std::make_shared<Node>(std::to_string(i)));
     }
 
     std::vector<int> counts{0, 0, 0, 0, 0};
@@ -106,9 +105,7 @@ TEST(HashRingTest, getNextNodes) {
     HashRing ring{1};
 
     for(int i = 0; i < 2; i++) {
-        ring.addNode({
-            std::to_string(i)
-        });
+        ring.addNode(std::make_shared<Node>(std::to_string(i)));
     }
 
     auto node_id = ring.findNode("hello") ->getId();
@@ -124,9 +121,7 @@ TEST(HashRingTest, getNextNodesFiveUnique) {
     HashRing ring{1};
 
     for(int i = 0; i < 5; i++) {
-        ring.addNode({
-            std::to_string(i)
-        });
+        ring.addNode(std::make_shared<Node>(std::to_string(i)));
     }
 
     auto output = ring.getNextNodes("hello", 5);
@@ -145,9 +140,7 @@ TEST(HashRingTest, getNextNodesVnodes) {
     HashRing ring{1000};
 
     for(int i = 0; i < 50; i++) {
-        ring.addNode({
-            std::to_string(i)
-        });
+        ring.addNode(std::make_shared<Node>(std::to_string(i)));
     }
 
     auto output = ring.getNextNodes("hello", 10);
@@ -170,9 +163,7 @@ TEST(HashRingTest, getNextNodesVnodesBig) {
     HashRing ring{1000};
 
     for(int i = 0; i < 3; i++) {
-        ring.addNode({
-            std::to_string(i)
-        });
+        ring.addNode(std::make_shared<Node>(std::to_string(i)));
     }
 
     auto output = ring.getNextNodes("hello", 10);

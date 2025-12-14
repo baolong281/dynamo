@@ -29,11 +29,6 @@ struct PutRpc {
 };
 
 // json serialized
-
-struct GetBody {
-    std::string key;
-};
-
 struct PutBody {
     std::string key;
     std::string data;

@@ -28,17 +28,17 @@ public:
     ~HashRing();
 
     std::shared_ptr<Node> findNode(const std::string& key);
-    void addNode(Node node);
+    void addNode(std::shared_ptr<Node> node);
     void removeNode(const std::string& node_id);
     std::vector<std::shared_ptr<Node>> getNextNodes(const std::string& key, size_t n);
 
-    std::set<std::shared_ptr<Node>> getNodes() {
+    std::vector<std::shared_ptr<Node>> getNodes() {
         return nodes_;
     }
 
 private:
     uint64_t ring_size_;
     std::multiset<VirtualNode, VirtualNodeCmp> node_ring_;
-    std::set<std::shared_ptr<Node>> nodes_;
+    std::vector<std::shared_ptr<Node>> nodes_;
     int n_vnodes_;
 };

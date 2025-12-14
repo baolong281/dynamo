@@ -1,7 +1,6 @@
 #include "hash_ring/hash_ring.h"
 #include <algorithm>
 #include <cstddef>
-#include <iostream>
 #include <memory>
 #include <openssl/md5.h>
 #include <stdexcept>
@@ -51,17 +50,15 @@ std::shared_ptr<Node> HashRing::findNode(const std::string& key) {
     return it->parent_;
 }
 
-void HashRing::addNode(Node node) {
-    auto node_ptr = std::make_shared<Node>(node);
-
+void HashRing::addNode(std::shared_ptr<Node> node) {
     for (int i = 0; i < n_vnodes_; i++) {
-        std::string vnode_id = node.getId() + "-" + std::to_string(i);
+        std::string vnode_id = node -> getId() + "-" + std::to_string(i);
         uint64_t pos = md5_hash_64(vnode_id);
 
-        node_ring_.insert(VirtualNode{vnode_id, pos, node_ptr});
+        node_ring_.insert(VirtualNode{vnode_id, pos, node});
     }
 
-    nodes_.insert(node_ptr);
+    nodes_.push_back(node);
 }
 
 
