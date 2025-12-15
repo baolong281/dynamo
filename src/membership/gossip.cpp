@@ -1,4 +1,5 @@
 #include "membership/gossip.h"
+#include <algorithm>
 #include <memory>
 #include <random>
 #include <stdexcept>
@@ -11,7 +12,17 @@
 #include "logging/logger.h"
 
 void Gossip::transmitRandom(std::mt19937 &gen) {
+    std::uniform_real_distribution<float> dist(0.0f, 1.0f); 
     auto nodes = this->ring_->getNodes();
+
+    nodes.erase(
+        std::remove_if(
+            nodes.begin(), nodes.end(), [&](auto &n) {
+                return state_[n -> getId()].status_ == NodeState::Status::KILLED && n -> getId() != curr_node_ -> getId();
+            }
+        ),
+        nodes.end()
+    );
 
     std::vector<int> pool(nodes.size());
     std::iota(pool.begin(), pool.end(), 0);
@@ -19,8 +30,9 @@ void Gossip::transmitRandom(std::mt19937 &gen) {
     std::shuffle(pool.begin(), pool.end(), gen);
     std::vector<int> selected(pool.begin(), pool.begin() + fanout_);
 
-    // does not guarantee we send to fanout_ nodes (can include ourselves)
-    // fix later
+    float r = dist(gen);
+
+
     ByteString serialized = Serializer::toBinary<ClusterState>(state_);
     for(auto idx : selected) {
         std::shared_ptr<Node> other = nodes.at(idx);
@@ -30,6 +42,16 @@ void Gossip::transmitRandom(std::mt19937 &gen) {
         bool success = nodes.at(idx)->send("/admin/gossip", serialized);
         if(!success) {
             Logger::instance().error("gossip request failing to node: " + nodes.at(idx)->getId());
+        }
+    }
+
+    // randomly send with low probability to seed server
+    // this may be bad but fixes a scenario in which one one is killed then restarted
+    if(r < 0.05) {
+        Logger::instance().debug("random firing!");
+        for(auto &[ip, port] : bootstrap_servers_) {
+            Node node{ip, port};
+            node.send("/admin/gossip", serialized);
         }
     }
 }
@@ -46,7 +68,6 @@ void Gossip::start() {
     bool success = false;
     while(!success && bootstrap_servers_.size() > 0) {
         for(auto &[ip, port] : bootstrap_servers_) {
-            Logger::instance().info("firing!");
             Node node{ip, port};
             success = success | node.send("/admin/gossip", serialized);
         }
@@ -73,6 +94,7 @@ void Gossip::onRecieve(std::unordered_map<std::string, NodeState> &other_state) 
         }  else if(v.incarnation_ > state_[k].incarnation_) {
             // we do a kill here
             if(v.status_ == NodeState::Status::KILLED && state_[k].status_ == NodeState::Status::ACTIVE) {
+                Logger::instance().debug("Recieved node shutdown for: " + v.id_);
                 ring_ -> removeNode(v.id_);
             } else if (v.status_ == NodeState::Status::ACTIVE && state_[k].status_ == NodeState::Status::KILLED) {
                 // we have to make the new node and re-insert it again
@@ -88,7 +110,7 @@ void Gossip::onRecieve(std::unordered_map<std::string, NodeState> &other_state) 
 }
 
 void Gossip::addState(NodeState state) {
-    Logger::instance().debug("Discovered new node. adding state: " + state.id_);
+    Logger::instance().debug("Discovered new node: " + state.id_);
 
     state_[state.id_] = state;
     
