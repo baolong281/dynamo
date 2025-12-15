@@ -3,14 +3,18 @@
 #include "storage/serializer.h"
 #include "logging/logger.h"
 #include "storage/value.h"
+ 
+Node::Node(std::string id, size_t tokens) : 
+    id_{id}, 
+    active_(true), 
+    tokens_(tokens) {}
 
-Node::Node(std::string id) : id_{id}, active_(true) {}
-
-Node::Node(std::string addr, int port) : 
+Node::Node(std::string addr, int port, size_t tokens) : 
     id_(addr+":"+std::to_string(port)), 
     addr_(addr), 
     port_(port), 
     client_(std::make_unique<httplib::Client>(addr, port)),
+    tokens_(tokens),
     active_(true) {}
 
 

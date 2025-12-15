@@ -20,12 +20,14 @@ int main(int argc, char* argv[]) {
     CLI::App app{"Dynamo"};
 
     int port = 8080;
+    int tokens = 1000;
     std::string address = "localhost";
     std::vector<std::string> bootstrap_servers_raw{};
 
     app.add_option("-p,--port", port, "Port to bind to");
     app.add_option("-a,--address", address, "Address to bind to");
     app.add_option("-b,--bootstrap-servers", bootstrap_servers_raw, "List of bootstrap servers (addr:port)");
+    app.add_option("-t,--tokens", tokens, "Number of tokens to allocate for node");
 
     CLI11_PARSE(app, argc, argv);
 
@@ -44,8 +46,8 @@ int main(int argc, char* argv[]) {
     }
 
     auto db = std::make_shared<DiskEngine>(std::to_string(port));
-    auto ring = std::make_shared<HashRing>(1000);
-    std::shared_ptr<Node> parent = std::make_shared<Node>(address, port);
+    auto ring = std::make_shared<HashRing>();
+    std::shared_ptr<Node> parent = std::make_shared<Node>(address, port, tokens);
 
     auto quorom = std::make_shared<Quorom>(3, 2, 1, parent, ring);
     auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers);

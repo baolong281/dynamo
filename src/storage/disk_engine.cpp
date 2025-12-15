@@ -9,7 +9,10 @@ DiskEngine::DiskEngine(std::string id) {
     leveldb::Options options;
     options.create_if_missing = true;
     leveldb::Status status = leveldb::DB::Open(options,  DB_PATH + id, &db_);
-    assert(status.ok());
+    if(!status.ok()) {
+        Logger::instance().error(status.ToString());
+        throw std::runtime_error("Error instantiating leveldb engine...");
+    }
 }
 
 DiskEngine::~DiskEngine() {

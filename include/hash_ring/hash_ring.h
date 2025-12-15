@@ -29,7 +29,7 @@ uint64_t md5_hash_64(const std::string& key);
 //TODO: add iterator in the future over next ring nodes?
 class HashRing {
 public:
-    explicit HashRing(int n_vnodes = 1000);
+    explicit HashRing();
     ~HashRing();
     // acquire a shared lock for concurrent reads
     std::shared_ptr<Node> findNode(const std::string& key);
@@ -49,5 +49,4 @@ private:
     std::multiset<VirtualNode, VirtualNodeCmp> node_ring_;
     std::vector<std::shared_ptr<Node>> nodes_;
     std::shared_mutex rwlock_;
-    int n_vnodes_;
 };

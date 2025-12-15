@@ -20,10 +20,11 @@ struct NodeState {
     int port_;
     Status status_;
     uint64_t incarnation_;
+    int tokens_;
 
     template <class Archive>
     void serialize(Archive & archive) {
-        archive(id_, address_, port_, status_, incarnation_);
+        archive(id_, address_, port_, status_, incarnation_, tokens_);
     }
 
     std::string toString() const {
@@ -34,6 +35,7 @@ struct NodeState {
             << ", port=" << port_
             << ", status=" << (status_ == ACTIVE ? "ACTIVE" : "KILLED")
             << ", incarnation=" << incarnation_
+            << ", tokens=" << tokens_
             << "}";
         return oss.str();
     }
@@ -70,7 +72,8 @@ class Gossip {
                         curr->getAddr(),
                         curr->getPort(),
                         NodeState::Status::ACTIVE,
-                        incarnation + 1
+                        incarnation + 1,
+                        curr->getTokens()
                     };
                 addState(initial);
             }

@@ -24,9 +24,8 @@ uint64_t md5_hash_64(const std::string& key) {
     return value;
 }
 
-HashRing::HashRing(int n_vnodes)
-    : ring_size_(RING_SIZE),
-      n_vnodes_(n_vnodes) {}
+HashRing::HashRing()
+    : ring_size_(RING_SIZE) {}
 
 HashRing::~HashRing() = default;
 
@@ -53,7 +52,7 @@ std::shared_ptr<Node> HashRing::findNode(const std::string& key) {
 
 void HashRing::addNode(std::shared_ptr<Node> node) {
     std::unique_lock<std::shared_mutex> lock(rwlock_);
-    for (int i = 0; i < n_vnodes_; i++) {
+    for (int i = 0; i < node->getTokens(); i++) {
         std::string vnode_id = node -> getId() + "-" + std::to_string(i);
         uint64_t pos = md5_hash_64(vnode_id);
         node_ring_.insert(VirtualNode{vnode_id, pos, node});

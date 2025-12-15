@@ -50,7 +50,8 @@ void Gossip::transmitRandom(std::mt19937 &gen) {
     if(r < 0.05) {
         Logger::instance().debug("random firing!");
         for(auto &[ip, port] : bootstrap_servers_) {
-            Node node{ip, port};
+            // we are setting tokens to one, but does not matter since we only use this node as a handle
+            Node node{ip, port, 1};
             node.send("/admin/gossip", serialized);
         }
     }
@@ -68,7 +69,7 @@ void Gossip::start() {
     bool success = false;
     while(!success && bootstrap_servers_.size() > 0) {
         for(auto &[ip, port] : bootstrap_servers_) {
-            Node node{ip, port};
+            Node node{ip, port, 1};
             success = success | node.send("/admin/gossip", serialized);
         }
     }
@@ -86,6 +87,8 @@ void Gossip::start() {
 }
 
 
+// theres an edge case where number of tokens is changed and is not synchronized
+// should not happen though unless there is a shutdown, which will mean our changes are reflected
 void Gossip::onRecieve(std::unordered_map<std::string, NodeState> &other_state) {
     for(auto &[k, v] : other_state) {
         auto it = state_.find(k);
@@ -99,7 +102,7 @@ void Gossip::onRecieve(std::unordered_map<std::string, NodeState> &other_state) 
             } else if (v.status_ == NodeState::Status::ACTIVE && state_[k].status_ == NodeState::Status::KILLED) {
                 // we have to make the new node and re-insert it again
                 std::shared_ptr<Node> new_node = std::make_shared<Node>(
-                    v.address_, v.port_
+                    v.address_, v.port_, v.tokens_
                 );
 
                 ring_->addNode(new_node);
@@ -115,7 +118,7 @@ void Gossip::addState(NodeState state) {
     state_[state.id_] = state;
     
     std::shared_ptr<Node> new_node = std::make_shared<Node>(
-        state.address_, state.port_
+        state.address_, state.port_, state.tokens_
     );
 
     ring_->addNode(new_node);
