@@ -2,7 +2,14 @@
 
 **goal:** a highly available, eventually consistent, low latency kv store. 
 
-![image](./screenshot.png)
+nodes running in terminal
+![image](./screenshot1.png)
+
+webui preview
+![image](./screenshot2.png)
+
+webui hash ring visualizer
+![image](./screenshot3.png)
 
 ## Web UI
 
@@ -20,9 +27,10 @@ TODO:
 - [x] Replication
 - [x] R/W quorom
 - [ ] retry mechanism (?)
-- [ ] data versioning and vector clocks
+- [x] data versioning and vector clocks
     - [ ] verify this works well
 - [ ] hinted handoff mechanism
 - [ ] anti entropy mechanism
-- [ ] membership and failure detection
+- [x] membership and failure detection
+- [x] cool visualizations
 - [ ] collect metrics 

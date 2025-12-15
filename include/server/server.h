@@ -249,7 +249,7 @@ class Server {
             }
 
             std::string key = body["key"];
-            Logger::instance().debug("Running PUT for key: " + key);
+            Logger::instance().debug("Running GET for key: " + key);
 
             try {
                 ValueList replica_values = quorom_ -> get(key);

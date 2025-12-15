@@ -48,7 +48,6 @@ void Gossip::transmitRandom(std::mt19937 &gen) {
     // randomly send with low probability to seed server
     // this may be bad but fixes a scenario in which one one is killed then restarted
     if(r < 0.05) {
-        Logger::instance().debug("random firing!");
         for(auto &[ip, port] : bootstrap_servers_) {
             // we are setting tokens to one, but does not matter since we only use this node as a handle
             Node node{ip, port, 1};
