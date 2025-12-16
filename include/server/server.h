@@ -98,6 +98,10 @@ class Server {
                 res.set_content(j.dump(), "application/json");
             });
 
+            svr_.Get("/admin/health", [this](const httplib::Request & req, httplib::Response &res) {
+                res.status = 200;
+            });
+
             Logger::instance().info(
                 "endpoints successfully registered!"
             );

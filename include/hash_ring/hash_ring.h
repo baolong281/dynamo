@@ -37,6 +37,9 @@ public:
     // acquire unique lock to have only one writer at a time
     void addNode(std::shared_ptr<Node> node);
     void removeNode(const std::string& node_id);
+
+    std::shared_ptr<Node> getNode(const std::string& id);
+
     std::vector<std::shared_ptr<Node>> getNodes() {
         return nodes_;
     }
@@ -49,4 +52,7 @@ private:
     std::multiset<VirtualNode, VirtualNodeCmp> node_ring_;
     std::vector<std::shared_ptr<Node>> nodes_;
     std::shared_mutex rwlock_;
+    std::thread t_;
+    std::mutex mu_;
+    std::atomic<bool> running_;
 };

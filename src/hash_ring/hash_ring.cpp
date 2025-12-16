@@ -121,3 +121,10 @@ std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key
 
     return top_nodes;
 }
+
+std::shared_ptr<Node> HashRing::getNode(const std::string &id) {
+    auto it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto node) {
+        return node -> getId() == id;
+    });
+    return *(it);
+}

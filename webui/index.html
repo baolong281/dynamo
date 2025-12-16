@@ -12,141 +12,152 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1 class="title">
-                Dynamo Dev Console
-            </h1>
-            <p class="subtitle">Distributed Key-Value Store Interface</p>
-            <div style="margin-top: 15px; text-align: center;">
-                 <a href="ring.html" class="btn btn-clear" style="border: 1px solid #000; padding: 8px 16px;">
+            <div class="header-content">
+                <div>
+                    <h1 class="title">
+                        Dynamo Dev Console
+                    </h1>
+                    <p class="subtitle">Distributed Key-Value Store Interface</p>
+                </div>
+                <a href="ring.html" class="btn btn-clear">
                     View Hash Ring →
-                 </a>
+                </a>
             </div>
         </header>
 
-        <!-- Node Management Panel -->
-        <section class="card">
-            <h2 class="card-title">
-                Node Management
-            </h2>
-            <div class="add-node-form">
-                <input type="text" id="nodeHost" placeholder="Host (e.g., localhost)" value="localhost" class="input">
-                <input type="number" id="nodePort" placeholder="Port" value="8080" class="input input-port">
-                <button onclick="addNode()" class="btn btn-primary">
-                Add Node
-            </button>
-            </div>
-            <div class="nodes-list" id="nodesList">
-                <div class="empty-state">No nodes configured. Add a node to get started.</div>
-            </div>
-        </section>
-
-        <!-- Cluster Membership -->
-        <section class="card">
-            <h2 class="card-title">
-                Cluster Membership
-            </h2>
-            <div class="form-group">
-                <div class="controls-row">
-                    <select id="membershipNodeSelect" class="select">
-                        <option value="">Select a node to query...</option>
-                    </select>
-                    <button onclick="fetchMembership()" class="btn btn-info">
-                        Fetch Status
-                    </button>
-                    <div class="toggle-container">
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="liveUpdateToggle" onchange="toggleLiveUpdate()">
-                            <span class="slider"></span>
-                        </label>
-                        <span class="toggle-label">Live Updates</span>
+        <!-- Main Content Grid -->
+        <div class="main-grid">
+            <!-- Left Column: Admin & Monitoring -->
+            <div class="left-column">
+                <!-- Node Management Panel -->
+                <section class="card">
+                    <h2 class="card-title">
+                        Node Management
+                    </h2>
+                    <div class="add-node-form">
+                        <input type="text" id="nodeHost" placeholder="Host (e.g., localhost)" value="localhost" class="input">
+                        <input type="number" id="nodePort" placeholder="Port" value="8080" class="input input-port">
+                        <button onclick="addNode()" class="btn btn-primary">
+                            Add Node
+                        </button>
                     </div>
-                </div>
-            </div>
-            <div id="membershipList" class="membership-grid">
-                <div class="empty-state">Select a node and fetch to view cluster status.</div>
-            </div>
-        </section>
+                    <div class="nodes-list" id="nodesList">
+                        <div class="empty-state">No nodes configured. Add a node to get started.</div>
+                    </div>
+                </section>
 
-        <!-- Operations Panel -->
-        <div class="operations-grid">
-            <!-- PUT Operation -->
-            <section class="card">
-                <h2 class="card-title">
-                    PUT Operation
-                </h2>
-                <div class="form-group">
-                    <label class="label">Target Node</label>
-                    <select id="putNodeSelect" class="select">
-                        <option value="">Select a node...</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="label">Key</label>
-                    <input type="text" id="putKey" placeholder="Enter key" class="input">
-                    <small class="hint">Context will be used from previous GET if available</small>
-                </div>
-                <div class="form-group">
-                    <label class="label">Value</label>
-                    <textarea id="putValue" placeholder="Enter value (will be base64 encoded)" class="textarea" rows="3"></textarea>
-                </div>
-                <button onclick="executePut()" class="btn btn-success btn-block">
-                    Execute PUT
-                </button>
-            </section>
+                <!-- Cluster Membership -->
+                <section class="card">
+                    <h2 class="card-title">
+                        Cluster Membership
+                    </h2>
+                    <div class="form-group">
+                        <div class="controls-row">
+                            <select id="membershipNodeSelect" class="select">
+                                <option value="">Select a node to query...</option>
+                            </select>
+                            <button onclick="fetchMembership()" class="btn btn-info">
+                                Fetch Status
+                            </button>
+                            <div class="toggle-container">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="liveUpdateToggle" onchange="toggleLiveUpdate()">
+                                    <span class="slider"></span>
+                                </label>
+                                <span class="toggle-label">Live Updates</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="membershipList" class="membership-grid">
+                        <div class="empty-state">Select a node and fetch to view cluster status.</div>
+                    </div>
+                </section>
+            </div>
 
-            <!-- GET Operation -->
-            <section class="card">
-                <h2 class="card-title">
-                    GET Operation
-                </h2>
-                <div class="form-group">
-                    <label class="label">Target Node</label>
-                    <select id="getNodeSelect" class="select">
-                        <option value="">Select a node...</option>
-                    </select>
+            <!-- Right Column: Operations & Results -->
+            <div class="right-column">
+                <!-- Operations Panel -->
+                <div class="operations-grid">
+                    <!-- PUT Operation -->
+                    <section class="card">
+                        <h2 class="card-title">
+                            PUT Operation
+                        </h2>
+                        <div class="form-group">
+                            <label class="label">Target Node</label>
+                            <select id="putNodeSelect" class="select">
+                                <option value="">Select a node...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Key</label>
+                            <input type="text" id="putKey" placeholder="Enter key" class="input">
+                            <small class="hint">Context will be used from previous GET if available</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Value</label>
+                            <textarea id="putValue" placeholder="Enter value (will be base64 encoded)" class="textarea" rows="3"></textarea>
+                        </div>
+                        <button onclick="executePut()" class="btn btn-success btn-block">
+                            Execute PUT
+                        </button>
+                    </section>
+
+                    <!-- GET Operation -->
+                    <section class="card">
+                        <h2 class="card-title">
+                            GET Operation
+                        </h2>
+                        <div class="form-group">
+                            <label class="label">Target Node</label>
+                            <select id="getNodeSelect" class="select">
+                                <option value="">Select a node...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="label">Key</label>
+                            <input type="text" id="getKey" placeholder="Enter key" class="input">
+                            <small class="hint">Context will be stored for subsequent PUT operations</small>
+                        </div>
+                        <button onclick="executeGet()" class="btn btn-info btn-block">
+                            Execute GET
+                        </button>
+                    </section>
                 </div>
-                <div class="form-group">
-                    <label class="label">Key</label>
-                    <input type="text" id="getKey" placeholder="Enter key" class="input">
-                    <small class="hint">Context will be stored for subsequent PUT operations</small>
-                </div>
-                <button onclick="executeGet()" class="btn btn-info btn-block">
-                    Execute GET
-                </button>
-            </section>
+
+                <!-- Request/Response Display -->
+                <section class="card response-card" id="responseSection" style="display: none;">
+                    <h2 class="card-title">
+                        Request & Response
+                        <button onclick="clearResponse()" class="btn-clear">Clear</button>
+                    </h2>
+                    
+                    <!-- Request Details -->
+                    <div class="request-section">
+                        <h2 class="section-header">📤 Request</h2>
+                        <div class="response-status" id="requestStatus"></div>
+                        <div class="response-content">
+                            <h3 class="response-subtitle">Headers</h3>
+                            <pre id="requestHeaders" class="response-pre"></pre>
+                            <h3 class="response-subtitle">Body</h3>
+                            <pre id="requestBody" class="response-pre"></pre>
+                        </div>
+                    </div>
+
+                    <!-- Response Details -->
+                    <div class="response-section">
+                        <h2 class="section-header">📥 Response</h2>
+                        <div class="response-status" id="responseStatus"></div>
+                        <div class="response-content">
+                            <h3 class="response-subtitle">Headers</h3>
+                            <pre id="responseHeaders" class="response-pre"></pre>
+                            <h3 class="response-subtitle">Body</h3>
+                            <pre id="responseBody" class="response-pre"></pre>
+                        </div>
+                    </div>
+                </section>
+            </div>
         </div>
-
-        <!-- Request/Response Display -->
-        <section class="card response-card" id="responseSection" style="display: none;">
-            <h2 class="card-title">
-                Request & Response
-                <button onclick="clearResponse()" class="btn-clear">Clear</button>
-            </h2>
-            
-            <!-- Request Details -->
-            <div class="request-section">
-                <h2 class="section-header">📤 Request</h2>
-                <div class="response-status" id="requestStatus"></div>
-                <div class="response-content">
-                    <h3 class="response-subtitle">Headers</h3>
-                    <pre id="requestHeaders" class="response-pre"></pre>
-                    <h3 class="response-subtitle">Body</h3>
-                    <pre id="requestBody" class="response-pre"></pre>
-                </div>
-            </div>
-
-            <!-- Response Details -->
-            <div class="response-section">
-                <h2 class="section-header">📥 Response</h2>
-                <div class="response-status" id="responseStatus"></div>
-                <div class="response-content">
-                    <h3 class="response-subtitle">Headers</h3>
-                    <pre id="responseHeaders" class="response-pre"></pre>
-                    <h3 class="response-subtitle">Body</h3>
-                    <pre id="responseBody" class="response-pre"></pre>
-                </div>
-            </div>
-        </section>
     </div>
 
     <script src="app.js"></script>

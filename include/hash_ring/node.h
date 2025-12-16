@@ -11,6 +11,7 @@ class Node {
         Node(std::string addr, int port, size_t tokens = 1000);
         bool send(const std::string& endpoint, const ByteString& data);
         bool replicate_put(const std::string& key, const Value& value);
+        bool checkHealth();
         ValueList replicate_get(const std::string& key);
         std::string getFullAddress();
         std::string getId();
