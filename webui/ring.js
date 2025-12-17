@@ -28,12 +28,56 @@ const COLORS = [
     '#4f46e5', // Ring Indigo
 ];
 
+let ringPollingInterval = null;
+
 window.addEventListener('resize', resizeCanvas);
 window.addEventListener('DOMContentLoaded', () => {
     resizeCanvas();
+    populateNodeSelector();
     fetchRingData();
     setupInteractions();
+    startRingPolling();
 });
+
+function populateNodeSelector() {
+    const globalSelect = document.getElementById('globalNodeSelect');
+    if (!globalSelect) return;
+    
+    const savedNodes = localStorage.getItem('dynamoNodes');
+    if (!savedNodes) return;
+    
+    const nodes = JSON.parse(savedNodes);
+    const options = nodes.map(node => `<option value="${node}">${node}</option>`).join('');
+    const defaultOption = '<option value="">Select a node...</option>';
+    
+    globalSelect.innerHTML = defaultOption + options;
+    
+    // Restore from localStorage
+    const savedNode = localStorage.getItem('selectedDynamoNode');
+    if (savedNode && nodes.includes(savedNode)) {
+        globalSelect.value = savedNode;
+    } else if (nodes.length > 0) {
+        globalSelect.value = nodes[0];
+        localStorage.setItem('selectedDynamoNode', nodes[0]);
+    }
+}
+
+function getSelectedNode() {
+    const globalSelect = document.getElementById('globalNodeSelect');
+    if (globalSelect && globalSelect.value) {
+        return globalSelect.value;
+    }
+    // Fallback to localStorage
+    return localStorage.getItem('selectedDynamoNode') || '';
+}
+
+function onGlobalNodeChange() {
+    const node = getSelectedNode();
+    if (node) {
+        localStorage.setItem('selectedDynamoNode', node);
+        fetchRingData();
+    }
+}
 
 function resizeCanvas() {
     const parent = canvas.parentElement;
@@ -44,17 +88,10 @@ function resizeCanvas() {
 
 async function fetchRingData() {
     try {
-        // In real dev, we might need to know which node to ask. 
-        // For now, assume localhost:8080 or try to get from localStorage if available? 
-        // Or just try specific common ports.
-        // Simple fallback logic: try localhost:8080, if fail try 8081.
-        // Actually, let's just pick one from localStorage if available, else default.
+        const targetHost = getSelectedNode();
         
-        let targetHost = 'localhost:8080';
-        const savedNodes = localStorage.getItem('dynamoNodes');
-        if (savedNodes) {
-            const nodes = JSON.parse(savedNodes);
-            if (nodes.length > 0) targetHost = nodes[0];
+        if (!targetHost) {
+            return; // No node selected
         }
 
         const response = await fetch(`http://${targetHost}/admin/ring`, {
@@ -70,10 +107,12 @@ async function fetchRingData() {
 
     } catch (error) {
         console.error('Error fetching ring:', error);
-        alert('Failed to fetch ring data. using mock data for viz testing if empty.');
-        // Optional: Generate mock data for visualization testing if fetch fails?
-        // keeping it clean for now.
     }
+}
+
+function startRingPolling() {
+    if (ringPollingInterval) return;
+    ringPollingInterval = setInterval(fetchRingData, 3000); // 3 second interval
 }
 
 function processData(data) {
@@ -83,11 +122,25 @@ function processData(data) {
     // Sort logic handled in backend? Usually ring is sorted by position.
     // Let's ensure raw data is sorted by position just in case for drawing lines/arcs.
     
+    const statusMap = new Map(); // parentId -> boolean (isActive)
+    
     ringData = data.map(item => {
         // Handle both possible key formats just in case they fix it, or the raw weird one
         const parentId = item["parent_ -> getId()"] || item.parentId || item.parent_id || "unknown";
         const position = BigInt(item.position_);
         
+        // Capture status
+        // The key is likely "parent_ -> isActive()" as per user request
+        if (item.hasOwnProperty("parent_ -> isActive()")) {
+            statusMap.set(parentId, item["parent_ -> isActive()"]);
+        } else if (item.hasOwnProperty("isActive")) {
+             statusMap.set(parentId, item["isActive"]);
+        } else {
+            // Default to true if not found, or maybe false? Let's assume true for backward compat? 
+            // Or better, check if we have seen it before.
+            if (!statusMap.has(parentId)) statusMap.set(parentId, true);
+        }
+
         return {
             id: item.id_,
             parentId: parentId,
@@ -109,6 +162,37 @@ function processData(data) {
     document.getElementById('pnodeCount').textContent = uniqueParents.length;
 
     updateLegend();
+    renderNodeStatusList(uniqueParents, statusMap);
+}
+
+function renderNodeStatusList(parents, statusMap) {
+    const container = document.getElementById('nodeStatusList');
+    if (!container) return;
+
+    if (parents.length === 0) {
+        container.innerHTML = '<div class="empty-state">No nodes found</div>';
+        return;
+    }
+
+    container.innerHTML = parents.map(pid => {
+        const isActive = statusMap.get(pid);
+        const color = parentNodes.get(pid);
+        
+        return `
+        <div class="membership-card ${isActive ? 'status-active' : 'status-killed'}">
+            <div class="member-header">
+                <span class="member-id" style="color:${color}">${pid}</span>
+                <span class="member-status badge">${isActive ? 'ACTIVE' : 'OUTAGE'}</span>
+            </div>
+            <div class="member-details">
+                <div class="detail-row">
+                    <span class="label">Status:</span>
+                    <span class="value">${isActive ? 'Operating Normally' : 'Suspected Down'}</span>
+                </div>
+            </div>
+        </div>
+        `;
+    }).join('');
 }
 
 function updateLegend() {

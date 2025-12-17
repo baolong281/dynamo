@@ -9,6 +9,8 @@ window.addEventListener('DOMContentLoaded', () => {
     loadNodes();
     renderNodes();
     updateNodeSelects();
+    // Start live polling by default
+    startLivePolling();
 });
 
 function loadNodes() {
@@ -73,27 +75,48 @@ function renderNodes() {
 }
 
 function updateNodeSelects() {
-    const putSelect = document.getElementById('putNodeSelect');
-    const getSelect = document.getElementById('getNodeSelect');
+    const globalSelect = document.getElementById('globalNodeSelect');
+    if (!globalSelect) return;
 
     const options = nodes.map(node => `<option value="${node}">${node}</option>`).join('');
     const defaultOption = '<option value="">Select a node...</option>';
 
-    putSelect.innerHTML = defaultOption + options;
-    getSelect.innerHTML = defaultOption + options;
+    globalSelect.innerHTML = defaultOption + options;
+    
+    // Try to restore from localStorage first
+    const savedNode = localStorage.getItem('selectedDynamoNode');
+    if (savedNode && nodes.includes(savedNode)) {
+        globalSelect.value = savedNode;
+    } else if (nodes.length > 0) {
+        // Auto-select first node if none saved or saved node no longer exists
+        globalSelect.value = nodes[0];
+        saveSelectedNode(nodes[0]);
+    }
+}
 
-    const membershipSelect = document.getElementById('membershipNodeSelect');
-    if (membershipSelect) {
-        membershipSelect.innerHTML = defaultOption + options;
+function getSelectedNode() {
+    const globalSelect = document.getElementById('globalNodeSelect');
+    return globalSelect ? globalSelect.value : '';
+}
+
+function saveSelectedNode(node) {
+    localStorage.setItem('selectedDynamoNode', node);
+}
+
+function onGlobalNodeChange() {
+    const node = getSelectedNode();
+    saveSelectedNode(node);
+    // Immediately refresh membership when node changes
+    if (node) {
+        fetchMembership();
     }
 }
 
 async function fetchMembership() {
-    const node = document.getElementById('membershipNodeSelect').value;
+    const node = getSelectedNode();
     const listContainer = document.getElementById('membershipList');
 
     if (!node) {
-        showNotification('Please select a node to query', 'error');
         return;
     }
 
@@ -175,20 +198,24 @@ function renderMembership(data) {
 // Live Update Logic
 let pollingInterval = null;
 
-function toggleLiveUpdate() {
-    const toggle = document.getElementById('liveUpdateToggle');
-    const isEnabled = toggle.checked;
-    
-    if (isEnabled) {
+function startLivePolling() {
+    if (pollingInterval) return; // Already polling
+    const node = getSelectedNode();
+    if (node) {
         fetchMembership(); // Fetch immediately
-        pollingInterval = setInterval(fetchMembership, 2000); // 2 second interval
-        showNotification('Live updates enabled', 'success');
-    } else {
-        if (pollingInterval) {
-            clearInterval(pollingInterval);
-            pollingInterval = null;
+    }
+    pollingInterval = setInterval(() => {
+        const currentNode = getSelectedNode();
+        if (currentNode) {
+            fetchMembership();
         }
-        showNotification('Live updates disabled', 'info');
+    }, 2000); // 2 second interval
+}
+
+function stopLivePolling() {
+    if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
     }
 }
 
@@ -210,12 +237,12 @@ function base64ToString(base64) {
 
 // API Operations
 async function executePut() {
-    const node = document.getElementById('putNodeSelect').value;
+    const node = getSelectedNode();
     const key = document.getElementById('putKey').value.trim();
     const value = document.getElementById('putValue').value;
 
     if (!node) {
-        showNotification('Please select a target node', 'error');
+        showNotification('Please select a node first', 'error');
         return;
     }
 
@@ -271,11 +298,11 @@ async function executePut() {
 }
 
 async function executeGet() {
-    const node = document.getElementById('getNodeSelect').value;
+    const node = getSelectedNode();
     const key = document.getElementById('getKey').value.trim();
 
     if (!node) {
-        showNotification('Please select a target node', 'error');
+        showNotification('Please select a node first', 'error');
         return;
     }
 

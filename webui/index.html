@@ -19,9 +19,17 @@
                     </h1>
                     <p class="subtitle">Distributed Key-Value Store Interface</p>
                 </div>
-                <a href="ring.html" class="btn btn-clear">
-                    View Hash Ring →
-                </a>
+                <div class="header-controls">
+                    <div class="global-node-selector">
+                        <label class="label">Active Node:</label>
+                        <select id="globalNodeSelect" class="select" onchange="onGlobalNodeChange()">
+                            <option value="">Select a node...</option>
+                        </select>
+                    </div>
+                    <a href="ring.html" class="btn btn-clear">
+                        View Hash Ring →
+                    </a>
+                </div>
             </div>
         </header>
 
@@ -51,25 +59,8 @@
                     <h2 class="card-title">
                         Cluster Membership
                     </h2>
-                    <div class="form-group">
-                        <div class="controls-row">
-                            <select id="membershipNodeSelect" class="select">
-                                <option value="">Select a node to query...</option>
-                            </select>
-                            <button onclick="fetchMembership()" class="btn btn-info">
-                                Fetch Status
-                            </button>
-                            <div class="toggle-container">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" id="liveUpdateToggle" onchange="toggleLiveUpdate()">
-                                    <span class="slider"></span>
-                                </label>
-                                <span class="toggle-label">Live Updates</span>
-                            </div>
-                        </div>
-                    </div>
                     <div id="membershipList" class="membership-grid">
-                        <div class="empty-state">Select a node and fetch to view cluster status.</div>
+                        <div class="empty-state">Select a node to view cluster status.</div>
                     </div>
                 </section>
             </div>
@@ -83,12 +74,6 @@
                         <h2 class="card-title">
                             PUT Operation
                         </h2>
-                        <div class="form-group">
-                            <label class="label">Target Node</label>
-                            <select id="putNodeSelect" class="select">
-                                <option value="">Select a node...</option>
-                            </select>
-                        </div>
                         <div class="form-group">
                             <label class="label">Key</label>
                             <input type="text" id="putKey" placeholder="Enter key" class="input">
@@ -108,12 +93,6 @@
                         <h2 class="card-title">
                             GET Operation
                         </h2>
-                        <div class="form-group">
-                            <label class="label">Target Node</label>
-                            <select id="getNodeSelect" class="select">
-                                <option value="">Select a node...</option>
-                            </select>
-                        </div>
                         <div class="form-group">
                             <label class="label">Key</label>
                             <input type="text" id="getKey" placeholder="Enter key" class="input">

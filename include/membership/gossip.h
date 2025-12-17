@@ -94,6 +94,7 @@ class Gossip {
         void onRecieve(ClusterState &other_state);
         void transmitRandom(std::mt19937 &gen);
         void stop();
+
         ClusterState getState() {
             return state_;
         }

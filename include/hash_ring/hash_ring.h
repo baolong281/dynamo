@@ -16,7 +16,7 @@ struct VirtualNode {
     std::shared_ptr<Node> parent_;
 };
 
-NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VirtualNode, id_, position_, parent_ -> getId());
+NLOHMANN_DEFINE_TYPE_NON_INTRUSIVE(VirtualNode, id_, position_, parent_ -> getId(), parent_ -> isActive());
 
 struct VirtualNodeCmp {
     bool operator()(const VirtualNode& lhs, const VirtualNode& rhs) const {
@@ -52,7 +52,4 @@ private:
     std::multiset<VirtualNode, VirtualNodeCmp> node_ring_;
     std::vector<std::shared_ptr<Node>> nodes_;
     std::shared_mutex rwlock_;
-    std::thread t_;
-    std::mutex mu_;
-    std::atomic<bool> running_;
 };

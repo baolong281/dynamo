@@ -60,6 +60,27 @@ body {
     gap: 20px;
 }
 
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.global-node-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.global-node-selector .label {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.global-node-selector .select {
+    min-width: 180px;
+}
+
 .title {
     font-size: 2rem;
     font-weight: bold;

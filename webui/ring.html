@@ -9,18 +9,27 @@
 <body>
     <div class="container ring-container">
         <header class="header">
-            <div class="header-nav">
-                <a href="index.html" class="btn btn-clear">← Back to Dashboard</a>
+            <div class="header-content">
+                <div class="header-nav">
+                    <a href="index.html" class="btn btn-clear">← Back to Dashboard</a>
+                </div>
+                <div>
+                    <h1 class="title">Hash Ring Visualization</h1>
+                    <p class="subtitle">Visualizing Virtual Node Distribution</p>
+                </div>
+                <div class="header-controls">
+                    <div class="global-node-selector">
+                        <label class="label">Active Node:</label>
+                        <select id="globalNodeSelect" class="select" onchange="onGlobalNodeChange()">
+                            <option value="">Select a node...</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <h1 class="title">Hash Ring Visualization</h1>
-            <p class="subtitle">Visualizing Virtual Node Distribution</p>
         </header>
 
         <section class="card controls-card">
             <div class="controls-row">
-                <button onclick="fetchRingData()" class="btn btn-primary">
-                    Refresh Ring
-                </button>
                 <div class="stats-group">
                     <span class="stat-label">Total VNodes:</span>
                     <span id="vnodeCount" class="stat-value">0</span>
@@ -48,6 +57,11 @@
         <section class="card legend-card">
             <h3 class="card-title">Node Legend</h3>
             <div id="ringLegend" class="ring-legend"></div>
+        </section>
+
+        <section class="card node-status-card">
+            <h3 class="card-title">Physical Node Status</h3>
+            <div id="nodeStatusList" class="membership-grid"></div>
         </section>
     </div>
 
