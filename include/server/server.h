@@ -53,7 +53,7 @@ class Server {
                         res.status = httplib::StatusCode::InternalServerError_500;
                     }
                     catch (std::exception &e) {
-                        Logger::instance().error(e.what());
+                        Logger::instance().error(std::string("UNKNOWN ERROR: ") + e.what());
                         res.set_content(e.what(), "text/html");
                     } catch (...) { 
                         Logger::instance().error("Unknown exception occured in router handler!");

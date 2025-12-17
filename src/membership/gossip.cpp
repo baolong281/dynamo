@@ -18,11 +18,17 @@ void Gossip::transmitRandom(std::mt19937 &gen) {
     nodes.erase(
         std::remove_if(
             nodes.begin(), nodes.end(), [&](auto &n) {
-                return state_[n -> getId()].status_ == NodeState::Status::KILLED && n -> getId() != curr_node_ -> getId();
+                return state_[n -> getId()].status_ == NodeState::Status::KILLED ||
+                       n -> getId() == curr_node_ -> getId() ||
+                       !(n -> isActive());
             }
         ),
         nodes.end()
     );
+
+    if(nodes.size() == 0) {
+        return;
+    }
 
     std::vector<int> pool(nodes.size());
     std::iota(pool.begin(), pool.end(), 0);
@@ -39,9 +45,10 @@ void Gossip::transmitRandom(std::mt19937 &gen) {
         if(other->getId() == curr_node_->getId()) {
             continue;
         }
-        bool success = nodes.at(idx)->send("/admin/gossip", serialized);
+        bool success = other ->send("/admin/gossip", serialized);
         if(!success) {
             Logger::instance().error("gossip request failing to node: " + nodes.at(idx)->getId());
+            err_detector_->markError(other->getId());
         }
     }
 

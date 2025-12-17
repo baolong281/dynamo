@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error/error_detector.h"
 #include "hash_ring/hash_ring.h"
 #include "logging/logger.h"
 #include <cstdint>
@@ -48,11 +49,16 @@ using ClusterState = std::unordered_map<std::string, NodeState>;
 class Gossip {
     public:
         void start();
-        Gossip(std::shared_ptr<HashRing> ring, int fanout, std::shared_ptr<Node> curr, std::vector<std::pair<std::string, int>> bootstrap_servers) : 
+        Gossip(std::shared_ptr<HashRing> ring, 
+               int fanout, std::shared_ptr<Node> curr, 
+               std::vector<std::pair<std::string, int>> bootstrap_servers,
+               std::shared_ptr<ErrorDetector> err_detector
+            ) : 
             ring_(ring),
             fanout_(fanout),
             curr_node_(curr),
-            bootstrap_servers_(bootstrap_servers) {
+            bootstrap_servers_(bootstrap_servers),
+            err_detector_(err_detector) {
                 std::string path{
                     "/tmp/" + curr->getAddr() + ":" + std::to_string(curr->getPort()) + "-gossip"
                 };
@@ -94,6 +100,7 @@ class Gossip {
 
     private:
         std::shared_ptr<HashRing> ring_;
+        std::shared_ptr<ErrorDetector> err_detector_;
         std::shared_ptr<Node> curr_node_;
         ClusterState state_;
         std::thread t_;

@@ -14,6 +14,7 @@ class ErrorDetector {
             ring_(ring),
             threshhold_(threshhold) {}
         ~ErrorDetector();
+        // should this take raw nodes instead?
         void markError(const std::string& key);
         void markSuccess(const std::string& key);
         void start();

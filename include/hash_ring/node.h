@@ -2,6 +2,7 @@
 
 #include "httplib.h"
 #include "storage/value.h"
+#include <atomic>
 #include <memory>
 #include <string>
 
@@ -12,17 +13,23 @@ class Node {
         bool send(const std::string& endpoint, const ByteString& data);
         bool replicate_put(const std::string& key, const Value& value);
         bool checkHealth();
-        ValueList replicate_get(const std::string& key);
+        std::optional<ValueList> replicate_get(const std::string& key);
         std::string getFullAddress();
         std::string getId();
-
-        std::string getAddr() { return addr_; }
-        int getPort() { return port_; }
+        std::string getAddr() { 
+            return addr_; 
+        }
+        int getPort() { 
+            return port_;
+        }
+        bool isActive() {
+            return active_.load(std::memory_order_relaxed);
+        }
         void setInactive() {
-            active_ = false;
+            active_.store(false, std::memory_order_relaxed);
         }
         void setActive() {
-            active_ = true;
+            active_.store(true, std::memory_order_relaxed);
         }
 
         int getTokens() {
@@ -34,6 +41,6 @@ class Node {
         std::string addr_;
         std::shared_ptr<httplib::Client> client_;
         size_t tokens_;
-        bool active_;
+        std::atomic<bool> active_;
         int port_;
 };

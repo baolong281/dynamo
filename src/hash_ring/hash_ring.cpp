@@ -85,7 +85,6 @@ std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key
     // make n minimum of available nodes
     // does this make sense to do
     n = std::min(n, nodes_.size());
-
     auto position_idx = md5_hash_64(key);
 
     auto it = std::upper_bound(

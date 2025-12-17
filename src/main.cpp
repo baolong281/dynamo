@@ -1,3 +1,4 @@
+#include "error/error_detector.h"
 #include "hash_ring/hash_ring.h"
 #include "hash_ring/quorom.h"
 #include "membership/gossip.h"
@@ -44,13 +45,15 @@ int main(int argc, char* argv[]) {
              std::cerr << "Invalid bootstrap node format: " << s << "\n";
         }
     }
-
-    auto db = std::make_shared<DiskEngine>(std::to_string(port));
-    auto ring = std::make_shared<HashRing>();
     std::shared_ptr<Node> parent = std::make_shared<Node>(address, port, tokens);
 
-    auto quorom = std::make_shared<Quorom>(3, 2, 1, parent, ring);
-    auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers);
+    // making main services
+    auto ring = std::make_shared<HashRing>();
+    auto err_detector = std::make_shared<ErrorDetector>(ring, 3);
+    auto quorom = std::make_shared<Quorom>(2, 2, 2, parent, ring, err_detector);
+    auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers, err_detector);
+    auto db = std::make_shared<DiskEngine>(std::to_string(port));
+
     Server service{db, ring, quorom, gossip};
 
     std::thread killer([&] {
@@ -64,6 +67,7 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, on_sigint);
 
     gossip->start();
+    err_detector->start();
     service.start("0.0.0.0", port);
 
     killer.join();

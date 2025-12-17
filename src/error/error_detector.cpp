@@ -1,4 +1,6 @@
 #include "error/error_detector.h"
+#include "logging/logger.h"
+#include <atomic>
 #include <chrono>
 #include <mutex>
 #include <thread>
@@ -24,8 +26,10 @@ void ErrorDetector::markError(const std::string& nodeId) {
             node->setInactive();
             q_.push(node);
             processing_.insert(nodeId);
+
         }
 
+        Logger::instance().info("Marking node: " + node->getId() + " in error state.");
         cv_.notify_one();
     }
 
@@ -35,7 +39,7 @@ void ErrorDetector::start() {
     running_.store(true);
     t_ = std::thread([this]() {
         std::unique_lock<std::mutex> lk(mu_);
-        while (true) {
+        while (running_.load(std::memory_order_relaxed)) {
             cv_.wait(lk, [&] {
                 return !running_.load() || !q_.empty();
             });
@@ -56,6 +60,7 @@ void ErrorDetector::start() {
             } else {
                 processing_.erase(node->getId());
                 node->setActive();
+                Logger::instance().info("Marking node: " + node->getId() + " as recovered.");
             }
             lk.unlock();
 
@@ -64,6 +69,7 @@ void ErrorDetector::start() {
             lk.lock();
         }
     });
+    Logger::instance().info("Starting error detection service in backgruond thread...");
 }
 
 ErrorDetector::~ErrorDetector() {

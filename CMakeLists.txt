@@ -53,6 +53,7 @@ add_library(dynamo STATIC
     src/storage/disk_engine.cpp
     src/storage/memory_engine.cpp
     src/membership/gossip.cpp
+    src/error/error_detector.cpp
 )
 
 add_library(Dynamo::dynamo ALIAS dynamo)

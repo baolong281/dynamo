@@ -1,13 +1,19 @@
 #include "hash_ring/quorom.h"
 #include "hash_ring/node.h"
 #include "logging/logger.h"
+#include "storage/value.h"
+#include "error/quorom_error.h"
 #include <future>
 #include <thread>
 #include <atomic>
 #include <mutex>
 
 ValueList Quorom::get(const std::string& key) {
-    auto nodes = ring_->getNextNodes(key, N_);
+    auto nodes = ring_->getNextNodes(key, N_ * 2);
+
+    if(nodes.size() < N_) {
+        throw QuoromError("Replica size larger than current cluster size!");
+    }
 
     ValueList values;
     values.reserve(R_);
@@ -17,19 +23,37 @@ ValueList Quorom::get(const std::string& key) {
 
     std::vector<std::future<void>> futures;
 
-    for (auto& node : nodes) {
+    for(int i = 0; i < N_; i++) {
+
+        std::shared_ptr<Node> node = nodes.at(i);
         if (node->getId() == curr_node_->getId()) continue;
 
-        futures.push_back(std::async(std::launch::async,
-            [&, node] {
-                auto result = node->replicate_get(key);
+        auto f = [&](std::shared_ptr<Node> node){
+            std::optional<ValueList> result = node->replicate_get(key);
+            if (result.has_value()) {
+                err_detector_->markSuccess(node->getId());
+                received.fetch_add(1, std::memory_order_relaxed);
                 {
                     std::lock_guard lk(m);
-                    for(auto &v : result) {
+                    for(auto &v : result.value()) {
                         values.push_back(std::move(v));
                     }
                 }
-                received++;
+            } else {
+                err_detector_->markError(node->getId());
+                Logger::instance().error("Get replication request for key '" + key + "' to node" + node->getId() + " failed!");
+            }
+            return !result->empty();
+        };
+
+        futures.push_back(std::async(std::launch::async,
+            [&, i, node] {
+                bool success = f(node);
+                int idx = N_ + i;
+                if(!success && idx < nodes.size()) {
+                    std::shared_ptr<Node> next_node = nodes.at(idx);
+                    f(next_node);
+                }
             }
         ));
     }
@@ -51,25 +75,46 @@ ValueList Quorom::get(const std::string& key) {
 
 
 bool Quorom::put(const std::string& key, const Value& value) {
-        auto preference_list = ring_->getNextNodes(key, N_);
-        std::atomic<int> received{0};
+        auto preference_list = ring_->getNextNodes(key, N_ * 2);
 
+        if(preference_list.size() < N_) {
+            throw QuoromError("Replica size larger than current cluster size!");
+        }
+
+        std::atomic<int> received{0};
         std::vector<std::future<void>> futures;
 
-        for (auto node : preference_list) {
+        // this may need to be rewritten
+        // this does not seem like it works well
+        // we send at most N_ * 2 requests, but we may need more in extreme situations
+        for(int i = 0; i < N_; i++) {
+            std::shared_ptr<Node> node = preference_list.at(i);
 
             if(node->getId() == curr_node_->getId()) {
                 continue;
             }
 
-            futures.push_back(std::async(std::launch::async, [&, node] {
-                auto result = node->replicate_put(key, value);
-                if (result) {
+            auto f = [&](std::shared_ptr<Node> node){
+                bool success = node->replicate_put(key, value);
+                if (success) {
+                    err_detector_->markSuccess(node->getId());
                     received.fetch_add(1, std::memory_order_relaxed);
                 } else {
+                    err_detector_->markError(node->getId());
                     Logger::instance().error("Put replication request for key '" + key + "' to node" + node->getId() + " failed!");
                 }
+                return success;
+            };
+
+            futures.push_back(std::async(std::launch::async, [&, node, i] {
+                bool success = f(node);
+                int idx = N_ + i;
+                if(!success && idx < preference_list.size()) {
+                    std::shared_ptr<Node> next_node = preference_list.at(idx);
+                    f(next_node);
+                }
             }));
+
         }
 
         auto deadline = std::chrono::steady_clock::now()
