@@ -29,7 +29,7 @@ ValueList Quorom::get(const std::string& key) {
         if (node->getId() == curr_node_->getId()) continue;
 
         auto f = [&](std::shared_ptr<Node> node){
-            std::optional<ValueList> result = node->replicate_get(key);
+            std::optional<ValueList> result = node->replicateGet(key);
             if (result.has_value()) {
                 err_detector_->markSuccess(node->getId());
                 received.fetch_add(1, std::memory_order_relaxed);
@@ -43,13 +43,13 @@ ValueList Quorom::get(const std::string& key) {
                 err_detector_->markError(node->getId());
                 Logger::instance().error("Get replication request for key '" + key + "' to node" + node->getId() + " failed!");
             }
-            return !result->empty();
+            return result.has_value();
         };
 
         futures.push_back(std::async(std::launch::async,
             [&, i, node] {
                 bool success = f(node);
-                int idx = N_ + i;
+                int idx = N_ + i - 1;
                 if(!success && idx < nodes.size()) {
                     std::shared_ptr<Node> next_node = nodes.at(idx);
                     f(next_node);
@@ -94,8 +94,14 @@ bool Quorom::put(const std::string& key, const Value& value) {
                 continue;
             }
 
-            auto f = [&](std::shared_ptr<Node> node){
-                bool success = node->replicate_put(key, value);
+            auto f = [&](std::shared_ptr<Node> node, bool handoff=false, const std::string node_id = ""){
+                bool success;
+                if(handoff) {
+                    success = node->replicateHandoff(key, value, node_id);
+                } else {
+                    success = node->replicatePut(key, value);
+                }
+
                 if (success) {
                     err_detector_->markSuccess(node->getId());
                     received.fetch_add(1, std::memory_order_relaxed);
@@ -108,10 +114,11 @@ bool Quorom::put(const std::string& key, const Value& value) {
 
             futures.push_back(std::async(std::launch::async, [&, node, i] {
                 bool success = f(node);
-                int idx = N_ + i;
+                // -1 necesscary ?
+                int idx = N_ + i - 1;
                 if(!success && idx < preference_list.size()) {
                     std::shared_ptr<Node> next_node = preference_list.at(idx);
-                    f(next_node);
+                    f(next_node, true, node->getId());
                 }
             }));
 

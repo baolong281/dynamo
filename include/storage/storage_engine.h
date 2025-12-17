@@ -18,4 +18,8 @@ class StorageEngine {
         bool contains(const std::string &key) {
             return static_cast<EngineImpl*>(this) -> contains(key);
         }
+
+        void remove(const std::string &key) {
+            return static_cast<EngineImpl*>(this) -> remove(key);
+        }
 };

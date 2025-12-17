@@ -69,9 +69,10 @@ void ErrorDetector::start() {
             lk.lock();
         }
     });
-    Logger::instance().info("Starting error detection service in backgruond thread...");
+    Logger::instance().info("Starting error detection service in background thread...");
 }
 
+//TODO turn this into stop() instead
 ErrorDetector::~ErrorDetector() {
     running_.store(false);
     cv_.notify_all();

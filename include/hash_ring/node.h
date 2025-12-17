@@ -11,9 +11,10 @@ class Node {
         Node(std::string id, size_t tokens = 1000);
         Node(std::string addr, int port, size_t tokens = 1000);
         bool send(const std::string& endpoint, const ByteString& data);
-        bool replicate_put(const std::string& key, const Value& value);
+        bool replicatePut(const std::string& key, const Value& value);
+        bool replicateHandoff(const std::string& key, const Value& value, const std::string& node_id);
+        std::optional<ValueList> replicateGet(const std::string& key);
         bool checkHealth();
-        std::optional<ValueList> replicate_get(const std::string& key);
         std::string getFullAddress();
         std::string getId();
         std::string getAddr() { 

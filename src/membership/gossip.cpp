@@ -86,7 +86,7 @@ void Gossip::start() {
 
         while (running) {
             transmitRandom(gen);
-            std::this_thread::sleep_for(std::chrono::seconds(3));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     });
     Logger::instance().info("starting gossip background process...");

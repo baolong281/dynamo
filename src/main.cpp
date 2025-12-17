@@ -1,4 +1,5 @@
 #include "error/error_detector.h"
+#include "error/handoff.h"
 #include "hash_ring/hash_ring.h"
 #include "hash_ring/quorom.h"
 #include "membership/gossip.h"
@@ -52,9 +53,12 @@ int main(int argc, char* argv[]) {
     auto err_detector = std::make_shared<ErrorDetector>(ring, 3);
     auto quorom = std::make_shared<Quorom>(2, 2, 2, parent, ring, err_detector);
     auto gossip = std::make_shared<Gossip>(ring, 2, parent, bootstrap_servers, err_detector);
-    auto db = std::make_shared<DiskEngine>(std::to_string(port));
+    auto db = std::make_shared<DiskEngine>(std::to_string(port), "");
 
-    Server service{db, ring, quorom, gossip};
+    auto handoff_db = std::make_shared<DiskEngine>(std::to_string(port), "-handoff");
+    auto handoff = std::make_shared<Handoff>(handoff_db, ring);
+
+    Server service{db, ring, quorom, gossip, handoff};
 
     std::thread killer([&] {
         while (!stop.load(std::memory_order_relaxed)) {
@@ -62,12 +66,14 @@ int main(int argc, char* argv[]) {
         }
         service.stop();
         gossip->stop();
+        handoff->stop();
     });
 
     std::signal(SIGINT, on_sigint);
 
     gossip->start();
     err_detector->start();
+    handoff->start();
     service.start("0.0.0.0", port);
 
     killer.join();

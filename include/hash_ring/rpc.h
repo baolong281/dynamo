@@ -8,7 +8,7 @@ using json = nlohmann::json;
 // binary serialized
 struct PutRpc {
 
-    PutRpc() {};
+    PutRpc() = default;
 
     PutRpc(const std::string key, const Value data) : 
         key_(key), 
@@ -25,6 +25,27 @@ struct PutRpc {
 
     std::string key_;
     Value data_;
+};
+
+struct HandoffRpc : PutRpc {
+
+    HandoffRpc() = default;
+
+    HandoffRpc(const std::string& key,
+           const Value& data,
+           const std::string& target_node_id)
+        : PutRpc(key, data),
+          target_node_id_(target_node_id) {}
+
+    template <class Archive>
+    void serialize(Archive & archive) {
+        archive( 
+            cereal::base_class<PutRpc>(this),
+            target_node_id_
+        );
+    }
+
+    std::string target_node_id_;
 };
 
 // json serialized

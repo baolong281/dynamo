@@ -122,6 +122,7 @@ std::vector<std::shared_ptr<Node>> HashRing::getNextNodes(const std::string& key
 }
 
 std::shared_ptr<Node> HashRing::getNode(const std::string &id) {
+    std::shared_lock<std::shared_mutex> lock(rwlock_);
     auto it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto node) {
         return node -> getId() == id;
     });

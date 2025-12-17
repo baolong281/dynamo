@@ -1,17 +1,17 @@
 #include "storage/disk_engine.h"
 #include "leveldb/db.h"
-#include <stdexcept>
-#include <cassert>
+#include "logging/logger.h"
+#include "error/storage_error.h"
 
 const std::string DB_PATH{"/tmp/dynamo"};
 
-DiskEngine::DiskEngine(std::string id) {
+DiskEngine::DiskEngine(std::string id, const std::string& postfix) {
     leveldb::Options options;
     options.create_if_missing = true;
-    leveldb::Status status = leveldb::DB::Open(options,  DB_PATH + id, &db_);
+    leveldb::Status status = leveldb::DB::Open(options,  DB_PATH + id + postfix, &db_);
     if(!status.ok()) {
         Logger::instance().error(status.ToString());
-        throw std::runtime_error("Error instantiating leveldb engine...");
+        throw StorageError("Error instantiating leveldb engine...");
     }
 }
 
@@ -38,7 +38,7 @@ ByteString DiskEngine::get(const std::string &key) {
     leveldb::Status s = db_ -> Get(leveldb::ReadOptions(), key, &data);
     // we do not consider not found to be an error
     if(!s.ok() && !s.IsNotFound()) {
-        throw std::runtime_error("Error fetching key: " + s.ToString());
+        throw StorageError("Error fetching key: " + s.ToString());
     }
     return data;
 }
@@ -56,4 +56,11 @@ bool DiskEngine::contains(const std::string &key) {
     std::string data{};
     leveldb::Status s = db_ -> Get(leveldb::ReadOptions(), key, &data);
     return !s.IsNotFound();
+}
+
+void DiskEngine::remove(const std::string &key) {
+    leveldb::Status s = db_->Delete(leveldb::WriteOptions(), key);
+    if(!s.ok()) {
+        throw StorageError("Error remove key key: " + key + ". " + s.ToString());
+    }
 }

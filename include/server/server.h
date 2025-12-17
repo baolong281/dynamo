@@ -1,5 +1,6 @@
 #pragma once
 
+#include "error/handoff.h"
 #include "error/storage_error.h"
 #include "hash_ring/hash_ring.h"
 #include "hash_ring/quorom.h"
@@ -13,7 +14,6 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
-#include <mutex>
 #include "storage/base64.hpp"
 #include <boost/functional/hash.hpp>
 
@@ -23,11 +23,16 @@ using json = nlohmann::json;
 template<typename Engine>
 class Server {
     public:
-        explicit Server(std::shared_ptr<Engine> engine, std::shared_ptr<HashRing> ring, std::shared_ptr<Quorom> quorom, std::shared_ptr<Gossip> gossip) : 
+        explicit Server(std::shared_ptr<Engine> engine, 
+                        std::shared_ptr<HashRing> ring, 
+                        std::shared_ptr<Quorom> quorom, 
+                        std::shared_ptr<Gossip> gossip,
+                        std::shared_ptr<Handoff> handoff) : 
         engine_(engine), 
         ring_(ring), 
         quorom_(quorom) ,
-        gossip_(gossip)        
+        gossip_(gossip),
+        handoff_(handoff)
         {
 
             svr_.Options("/(.*)",
@@ -77,6 +82,12 @@ class Server {
                 this->handleReplicationGet(req, res);
             });
 
+            svr_.Post("/replication/handoff", [this](const httplib::Request & req, httplib::Response &res) {
+                Logger::instance().info("got handoff request!");
+                HandoffRpc body = Serializer::fromBinary<HandoffRpc>(req.body);
+                handoff_->append(body.key_, body.target_node_id_, body.data_);
+            });
+
             // should be logically seperated?
             svr_.Post("/admin/gossip", [this](const httplib::Request & req, httplib::Response &res) {
                 auto serialized = Serializer::fromBinary<ClusterState>(req.body);
@@ -97,6 +108,7 @@ class Server {
                 res.status = 200;
                 res.set_content(j.dump(), "application/json");
             });
+
 
             svr_.Get("/admin/health", [this](const httplib::Request & req, httplib::Response &res) {
                 res.status = 200;
@@ -125,8 +137,8 @@ class Server {
         std::shared_ptr<HashRing> ring_;
         std::shared_ptr<Quorom> quorom_;
         std::shared_ptr<Gossip> gossip_;
+        std::shared_ptr<Handoff> handoff_;
         httplib::Server svr_;
-        std::mutex mu_;
 
         void setCORS(const httplib::Request &req, httplib::Response &res) { 
             res.set_header("Access-Control-Allow-Origin", "*"); 
@@ -134,13 +146,13 @@ class Server {
             res.set_header("Access-Control-Allow-Headers", "X-Requested-With, Content-Type, Accept, Key");
         }
 
+        void handleHandoff(const httplib::Request &req, httplib::Response &res) { 
+
+        }
+
         void handleReplicationGet(const httplib::Request &req, httplib::Response &res) { 
             Logger::instance().debug("Running replication get request for key: " + req.body);
-            {
-                std::lock_guard<std::mutex> guard(mu_);
-                res.body = engine_ -> get(req.body);
-            }
-
+            res.body = engine_ -> get(req.body);
             res.status = 200;
         }
 
@@ -149,7 +161,6 @@ class Server {
             Logger::instance().debug("Running replication put request for key: " + rpc.key_);
 
             {
-                std::lock_guard<std::mutex> guard(mu_);
                 ValueList values = Serializer::fromBinary<ValueList>(engine_ -> get(rpc.key_));
 
                 bool current_clock_lt = std::any_of(values.begin(), values.end(), [&rpc](Value &v) {
@@ -202,7 +213,6 @@ class Server {
 
             // TODO put this into a function?
             {
-                std::lock_guard<std::mutex> guard(mu_);
                 ValueList values = Serializer::fromBinary<ValueList>(engine_ -> get(key));
 
                 // if the clock is less than any, then we cannot put
@@ -247,10 +257,7 @@ class Server {
 
             auto body = json::parse(req.body);
             ValueList values{};
-            {
-                std::lock_guard<std::mutex> guard(mu_);
-                values = Serializer::fromBinary<ValueList>(engine_ -> get(body["key"]));
-            }
+            values = Serializer::fromBinary<ValueList>(engine_ -> get(body["key"]));
 
             std::string key = body["key"];
             Logger::instance().debug("Running GET for key: " + key);

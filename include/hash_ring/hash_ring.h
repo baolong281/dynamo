@@ -26,15 +26,15 @@ struct VirtualNodeCmp {
 
 uint64_t md5_hash_64(const std::string& key);
 
-//TODO: add iterator in the future over next ring nodes?
+
+// the hash ring is guaranteed to be thread safe for reads / writes
+// we allow single read but concurrent rights
 class HashRing {
 public:
     explicit HashRing();
     ~HashRing();
-    // acquire a shared lock for concurrent reads
     std::shared_ptr<Node> findNode(const std::string& key);
     std::vector<std::shared_ptr<Node>> getNextNodes(const std::string& key, size_t n);
-    // acquire unique lock to have only one writer at a time
     void addNode(std::shared_ptr<Node> node);
     void removeNode(const std::string& node_id);
 

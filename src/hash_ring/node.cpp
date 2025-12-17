@@ -3,6 +3,7 @@
 #include "storage/serializer.h"
 #include "logging/logger.h"
 #include "storage/value.h"
+#include <httplib.h>
 #include <optional>
  
 // this constructor is only ever used for testing
@@ -45,9 +46,7 @@ bool Node::send(const std::string& endpoint, const ByteString& data) {
 }
 
 // should we early return like this here?
-bool Node::replicate_put(const std::string& key, const Value& value) {
-    Logger::instance().debug("Replicating key: " + key + " to node " + getId());
-
+bool Node::replicatePut(const std::string& key, const Value& value) {
     if(!this->isActive()) {
         return false;
     }
@@ -57,18 +56,34 @@ bool Node::replicate_put(const std::string& key, const Value& value) {
     auto res = client_ -> Post("/replication/put", serialized, "application/octet-stream");
 
     if(res) {
-        return res->status == httplib::StatusCode::OK_200;
+        return res->status == httplib::StatusCode::OK_200 || res->status == httplib::StatusCode::BadRequest_400;
     } else {
         return false;
     }
 }
 
-std::optional<ValueList> Node::replicate_get(const std::string& key) {
+bool Node::replicateHandoff(const std::string& key, const Value& value, const std::string& node_id) {
+    Logger::instance().debug("Hinted handoff for key: " + key + " to node " + getId());
+
+    if(!this->isActive()) {
+        return false;
+    }
+
+    HandoffRpc data{key, value, node_id};
+    auto serialized = Serializer::toBinary(data);
+    auto res = client_ -> Post("/replication/handoff", serialized, "application/octet-stream");
+
+    if(res) {
+        return res->status == httplib::StatusCode::OK_200 || res->status == httplib::StatusCode::BadRequest_400;
+    } else {
+        return false;
+    }
+}
+
+std::optional<ValueList> Node::replicateGet(const std::string& key) {
     httplib::Headers headers{
         {"Content-Type", "application/octet-stream"}
     };
-
-    Logger::instance().debug("Retrieving key: " + key + " from replcia node " + getId());
     auto res = client_ -> Post("/replication/get", key, "application/octet-stream");
     if(res) {
         return Serializer::fromBinary<ValueList>(res->body);
