@@ -78,7 +78,7 @@ class Gossip {
                         curr->getAddr(),
                         curr->getPort(),
                         NodeState::Status::ACTIVE,
-                        incarnation + 1,
+                        incarnation + 2,
                         curr->getTokens()
                     };
                 addState(initial);

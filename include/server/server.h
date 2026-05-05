@@ -301,7 +301,6 @@ class Server {
 
             if(current_node->getId() != coordination_node->getId()) {
                 std::string node_url{"http://" + coordination_node -> getFullAddress() + endpoint};
-                Logger::instance().debug("Redirecting request for key: " + key + " to node: " + node_url);
                 res.status = 307; 
                 res.set_header("Location", node_url);
                 return true;

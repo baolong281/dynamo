@@ -26,7 +26,7 @@ private:
   Logger() = default;
   std::mutex mu_;
   std::atomic<LogLevel> level_{LogLevel::INFO};
-
+  const char* levelColor(LogLevel lvl);
   static std::string timestamp();
 
   static std::string threadId();

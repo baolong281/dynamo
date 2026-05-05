@@ -4,15 +4,29 @@
 #include <thread>
 #include <chrono>
 
-void Logger::log(LogLevel lvl, const std::string &msg) {
-    std::ostringstream oss;
-    oss << timestamp() << " [thread-" << threadId() << "] [" << levelToStr(lvl)
-        << "] " << msg << '\n';
+constexpr const char* RESET  = "\033[0m";
+constexpr const char* RED    = "\033[31m";
+constexpr const char* YELLOW = "\033[33m";
 
-    {
-        std::lock_guard<std::mutex> lock(mu_);
-        std::cerr << oss.str();
+const char* Logger::levelColor(LogLevel lvl) {
+    switch (lvl) {
+    case LogLevel::WARN:  return YELLOW;
+    case LogLevel::ERROR: return RED;
+    default:              return "";
     }
+}
+
+void Logger::log(LogLevel lvl, const std::string& msg) {
+    std::ostringstream oss;
+    oss << timestamp()
+        << " [thread-" << threadId() << "] "
+        << levelColor(lvl)
+        << "[" << levelToStr(lvl) << "]"
+        << RESET
+        << " " << msg << '\n';
+
+    std::lock_guard<std::mutex> lock(mu_);
+    std::cerr << oss.str();
 }
 
 void Logger::debug(const std::string &msg) { log(LogLevel::DEBUG, msg); }
